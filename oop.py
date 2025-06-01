@@ -66,44 +66,61 @@
 
 # print(course.add_student(s4))
 # print(course.get_average_grade())
-class Pet:
-    def __init__(self, name, age):
-        self.name = name
-        self.age = age
+# class Pet:
+#     def __init__(self, name, age):
+#         self.name = name
+#         self.age = age
 
-    def show(self):
-        print(f"I am {self.name} my age is {self.age} years old")
+#     def show(self):
+#         print(f"I am {self.name} my age is {self.age} years old")
 
-    def speak(self):
-        print("jestem nie binarny")
+#     def speak(self):
+#         print("jestem nie binarny")
 
-class Cat(Pet):
-    def __init__(self, name, age, color):
-        super().__init__(name, age)
-        self.color = color
+# class Cat(Pet):
+#     def __init__(self, name, age, color):
+#         super().__init__(name, age)
+#         self.color = color
     
-    def show(self):
-        print(f"I am {self.name} my age is {self.age} years old and i am {self.color}")
+#     def show(self):
+#         print(f"I am {self.name} my age is {self.age} years old and i am {self.color}")
         
-    def speak(self):
-        print("Meow")
+#     def speak(self):
+#         print("Meow")
 
-class Dog(Pet):
-    # def __init__(self, name, age):
-    #     self.name = name
-    #     self.age = age
+# class Dog(Pet):
+#     # def __init__(self, name, age):
+#     #     self.name = name
+#     #     self.age = age
     
-    def speak(self):
-        print("Bark")
+#     def speak(self):
+#         print("Bark")
 
-p = Pet("Retard", 14)
-p.show()
-p.speak()
+# p = Pet("Retard", 14)
+# p.show()
+# p.speak()
 
-c = Cat("JebanaKurwa", 5, "blue")
-c.show()
-c.speak()
+# c = Cat("JebanaKurwa", 5, "blue")
+# c.show()
+# c.speak()
 
-d = Dog("GlupiChuj", 12)
-d.show()
-d.speak()
+# d = Dog("GlupiChuj", 12)
+# d.show()
+# d.speak()
+
+class Person:
+    number_of_people = 0
+
+    def __init__(self, name):
+        self.name = name
+        # Person.number_of_people += 1
+    
+    @classmethod
+    def number_of_people(cls):
+        return cls.number_of_people
+
+p1 = Person("Retard")
+p2 = Person("Kurwa")
+
+# Person.number_of_people = 9
+print(p1.number_of_people)
