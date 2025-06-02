@@ -114,13 +114,19 @@ class Person:
     def __init__(self, name):
         self.name = name
         # Person.number_of_people += 1
+        Person.add_peson()
     
     @classmethod
-    def number_of_people(cls):
+    def number_of_people_(cls):
         return cls.number_of_people
+
+    @classmethod
+    def add_peson(cls):
+        cls.number_of_people += 1
 
 p1 = Person("Retard")
 p2 = Person("Kurwa")
 
 # Person.number_of_people = 9
-print(p1.number_of_people)
+# print(p1.number_of_people)
+print(Person.number_of_people_())
