@@ -6,12 +6,16 @@ class Board:
     
     def print_board(self):
         for i, row in enumerate(self.board):
-            print(f"{" | ".join(row)}")
+            print({" | ".join(row)})
             if i < 2:
                 print("--+---+--")
 game = Board()
 
-#print game board
+def computer_move():
+    pass
+def player_move():
+    pass
+
 def main():
     game.print_board()
 
@@ -22,18 +26,13 @@ def main():
     
     turn = "player" if player_symbol == "X" else "computer"
     
-
-    if turn == "player":
-        player_move()
-    else:
-        computer_move()
-        turn = "player"
-
-def computer_move():
-    pass
-def player_move():
-    pass
-
-
-
+    while True:
+        if turn == "player":
+            player_move()
+            turn = "computer" 
+            
+        else:
+            computer_move()
+            turn = "player"
+            
 main()
