@@ -1,13 +1,39 @@
-def print_board():
-    game_board = [["x" for _ in range(3)] for _ in range(3)]
-    game_board[1][1] = "O"
-    print(f" {game_board[0][0]} | {game_board[0][1]} | {game_board[0][2]} ")
-    print("---+---+---")
-    print(f" {game_board[1][0]} | {game_board[1][1]} | {game_board[2][2]} ")
-    print("---+---+---")
-    print(f" {game_board[2][0]} | {game_board[2][1]} | {game_board[2][2]} ")
+import random
+#create 3d arry for a grid and prints board 
+class Board:
+    def __init__(self):
+        self.board = [[" " for _ in range(3)] for _ in range(3)]
+    
+    def print_board(self):
+        for i, row in enumerate(self.board):
+            print(f"{" | ".join(row)}")
+            if i < 2:
+                print("--+---+--")
+game = Board()
+
+#print game board
+def main():
+    game.print_board()
+
+    player_symbol = input("Chose symbol ('X' or 'O')").upper()
+
+    while player_symbol not in ("X", "O"):
+        player_symbol = input("Chose symbol ('X' or 'O')").upper()
+    
+    turn = "player" if player_symbol == "X" else "computer"
     
 
-def board_move(user_input):
+    if turn == "player":
+        player_move()
+    else:
+        computer_move()
+        turn = "player"
+
+def computer_move():
     pass
-print_board()
+def player_move():
+    pass
+
+
+
+main()
