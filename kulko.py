@@ -6,33 +6,31 @@ class Board:
     
     def print_board(self):
         for i, row in enumerate(self.board):
-            print({" | ".join(row)})
+            print(" | ".join(row))
             if i < 2:
                 print("--+---+--")
 game = Board()
 
-def computer_move():
-    pass
-def player_move():
-    pass
+def computer_move(symbol):
+    return "computer"
+def player_move(symbol):
+    return "plyer"
 
 def main():
     game.print_board()
 
     player_symbol = input("Chose symbol ('X' or 'O')").upper()
 
-    while player_symbol not in ("X", "O"):
-        player_symbol = input("Chose symbol ('X' or 'O')").upper()
-    
-    turn = "player" if player_symbol == "X" else "computer"
-    
     while True:
+        while player_symbol not in ("X", "O"):
+            player_symbol = input("Chose symbol ('X' or 'O')").upper()
+
+        turn = "player" if player_symbol == "X" else "computer"
+
         if turn == "player":
-            player_move()
-            turn = "computer" 
+            print(player_move(player_symbol))
             
         else:
-            computer_move()
-            turn = "player"
+            print(computer_move(player_symbol))
             
 main()
