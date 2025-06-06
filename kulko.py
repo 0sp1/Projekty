@@ -10,29 +10,33 @@ class Board:
             if i < 2:
                 print("--+---+--")
     def win_conditions(self):
-        pass
-
+        pass     
 board = Board()
 
 def computer_move(symbol):
-    print(symbol)
+    pass
 
 def player_move(symbol):
-    print(symbol)
+    pass
 
 def is_input_valid(player_symbol):
     while player_symbol not in ("X", "O"):
-        player_symbol = input("Chose symbol ('X' or 'O')").upper()
+        player_symbol = input("Chose symbol ('X' or 'O') ").upper()
     return player_symbol
+
+def is_valid_move():
+    empty_celles = [(i, j) for i in range(3) for j in range(3) if board.board[i][j] == " "]
+    return empty_celles
 
 def main():
     board.print_board()
 
-    player_symbol = is_input_valid(input("Chose symbol ('X' or 'O')").upper())
+    player_symbol = is_input_valid(input("Chose symbol ('X' or 'O') ").upper())
     computer_symbol = "O" if player_symbol == "X" else "X"
 
     turn = "player" if player_symbol == "X" else "computer"
-
+    print(is_valid_move())
+    
     while True:
 
         if turn == "player":
