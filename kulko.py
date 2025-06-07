@@ -1,8 +1,8 @@
-import random
+import random, os
 
 class Board:
     def __init__(self):
-        self.board = [["" for _ in range(3)] for _ in range(3)]
+        self.board = [[" " for _ in range(3)] for _ in range(3)]
     
     def print_board(self):
         for i, row in enumerate(self.board):
@@ -20,21 +20,45 @@ class Board:
         return False
     
 board = Board()
+game_board = board.board
+
+def is_move_valid():
+    empty_celles = [(i, j) for i in range(3) for j in range(3) if game_board[i][j] == " "]
+    return empty_celles
 
 def computer_move(symbol):
-    pass
+    random_comp_choice = random.randint(1, 9)
+    positions = {
+        1:(0,0), 2:(0,1), 3:(0,2),
+        4:(1,0), 5:(1,1), 6:(1,2),
+        7:(2,0), 8:(2,1), 9:(2,2),
+    }
 
-def player_move(symbol):
-    pass
+    if random_comp_choice in positions:
+        row, col = positions.get(random_comp_choice)
+        if (row, col) in is_move_valid():
+            game_board[row][col] = symbol
 
+def player_move(symbol, user_input):
+    positions = {
+        "1":(0,0), "2":(0,1), "3":(0,2),
+        "4":(1,0), "5":(1,1), "6":(1,2),
+        "7":(2,0), "8":(2,1), "9":(2,2),
+    }
+
+    if user_input in positions:
+        row, col = positions.get(user_input)
+        if (row, col) in is_move_valid():
+            game_board[row][col] = symbol
+        else:
+            print("Position already taken ")
+    else:
+        print("Invalid input")
+            
 def is_input_valid(player_symbol):
     while player_symbol not in ("X", "O"):
         player_symbol = input("Chose symbol ('X' or 'O') ").upper()
     return player_symbol
-
-# def is_valid_move():
-#     empty_celles = [(i, j) for i in range(3) for j in range(3) if board.board[i][j] == " "]
-#     return empty_celles
 
 def main():
     board.print_board()
@@ -45,17 +69,22 @@ def main():
     turn = "player" if player_symbol == "X" else "computer"
     
     while True:
-
+        
         if turn == "player":
-            player_move(player_symbol)
-            computer_move(computer_symbol)
+            user_input = input("Chose a field (1-9) ")
+            player_move(player_symbol, user_input)
         else:
             computer_move(computer_symbol)
-            player_move(player_symbol)
 
         current_symbol = player_symbol if turn == "player" else computer_symbol
+        board.print_board()
+
         if board.win_conditions(current_symbol):
             print(f"{current_symbol} is a winner ")
             break
-
+        if len(is_move_valid()) == 0:
+            print("It's a draw")
+            break
+        
+        turn = "computer" if turn == "player" else "player"
 main()
