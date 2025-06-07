@@ -27,17 +27,17 @@ def is_move_valid():
     return empty_celles
 
 def computer_move(symbol):
-    random_comp_choice = random.randint(1, 9)
     positions = {
         1:(0,0), 2:(0,1), 3:(0,2),
         4:(1,0), 5:(1,1), 6:(1,2),
         7:(2,0), 8:(2,1), 9:(2,2),
     }
-
-    if random_comp_choice in positions:
-        row, col = positions.get(random_comp_choice)
-        if (row, col) in is_move_valid():
-            game_board[row][col] = symbol
+    if is_move_valid():
+        random_comp_choice = random.randint(1, 9)
+        if random_comp_choice in positions:
+            row, col = positions.get(random_comp_choice)
+            if (row, col) in is_move_valid():
+                game_board[row][col] = symbol
 
 def player_move(symbol, user_input):
     positions = {
@@ -67,9 +67,7 @@ def main():
     computer_symbol = "O" if player_symbol == "X" else "X"
 
     turn = "player" if player_symbol == "X" else "computer"
-    
     while True:
-        
         if turn == "player":
             user_input = input("Chose a field (1-9) ")
             player_move(player_symbol, user_input)
