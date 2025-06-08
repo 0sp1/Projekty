@@ -1,4 +1,4 @@
-import random
+import random, os
 
 class Board:
     def __init__(self):
@@ -65,8 +65,10 @@ def main():
     while True:
         if turn == "player":
             player_move(player_symbol, board)
+            os.system("cls")
         else:
             computer_move(computer_symbol, board)
+            os.system("cls")
 
         current_symbol = player_symbol if turn == "player" else computer_symbol
         board.print_board()
