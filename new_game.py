@@ -13,9 +13,8 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-    if pygame.mouse.get_pressed(num_buttons=3):
-        print("AAAAAAAAAAAA!!!!!")
-
+    if pygame.mouse.get_pressed()[0]:
+        print(pygame.mouse.get_pos())
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("grey")
 
