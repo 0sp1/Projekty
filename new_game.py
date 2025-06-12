@@ -1,4 +1,9 @@
 import pygame
+
+class GameBoard():
+    def __init__(self):
+        self.board = [[" " for _ in range(3)] for _ in range(3)]
+
 # pygame setup
 pygame.init()
 WIDTH, HEIGHT = 900, 900
@@ -25,8 +30,6 @@ while running:
     pygame.draw.line(screen, "black", (150, 550), (750, 550), width= 3)
 
     
-
-
     # flip() the display to put your work on screen
     pygame.display.flip()
 
