@@ -12,6 +12,10 @@ class GameBoard():
             #vertical lines 
             y = x
             pygame.draw.line(screen, "black", (y, 0), (y, 600))
+
+    def empty_cells(self, row, col):
+        return [(i,j) for i in range(3) for j in range(3) if self.board[i][j] == " "]
+
     def draw_O(self):
         pass
     def draw_X(self):
@@ -38,10 +42,14 @@ while running:
 
     # RENDER YOUR GAME HERE
     if pygame.mouse.get_pressed()[0]:
+
         col, row =  pygame.mouse.get_pos()
         col = col//cell_size
         row = row//cell_size
-        print(col, row)
+        if game.empty_cells(row, col):
+            game.board[row][col] = "X"
+            print(col, row)
+
 
     game.draw_grid(screen, cell_size)
 
