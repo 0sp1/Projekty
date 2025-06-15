@@ -13,7 +13,7 @@ class GameBoard():
             y = x
             pygame.draw.line(screen, "black", (y, 0), (y, 600))
 
-    def empty_cells(self, row, col):
+    def empty_cells(self):
         return [(i,j) for i in range(3) for j in range(3) if self.board[i][j] == " "]
 
     def draw_O(self):
@@ -36,13 +36,13 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-    
+
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("grey")
 
     # RENDER YOUR GAME HERE
-    if pygame.mouse.get_pressed()[0]:
-
+    
+    if event.type == pygame.MOUSEBUTTONDOWN:
         col, row =  pygame.mouse.get_pos()
         col = col//cell_size
         row = row//cell_size
@@ -50,7 +50,7 @@ while running:
             game.board[row][col] = "X"
             print(col, row)
 
-
+    print(game.empty_cells())
     game.draw_grid(screen, cell_size)
 
     
