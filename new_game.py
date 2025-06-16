@@ -30,6 +30,11 @@ game = GameBoard()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 running = True
+
+player_symbol = "X" 
+computer_symbol = "O"
+turn = player_symbol
+
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
@@ -41,6 +46,7 @@ while running:
     screen.fill("grey")
 
     # RENDER YOUR GAME HERE
+    game.draw_grid(screen, cell_size)
     
     if event.type == pygame.MOUSEBUTTONDOWN:
         col, row =  pygame.mouse.get_pos()
@@ -49,14 +55,12 @@ while running:
         if game.empty_cells(row, col):
             game.board[row][col] = "X"
             print(col, row)
-
-    print(game.empty_cells())
-    game.draw_grid(screen, cell_size)
-
     
-    # flip() the display to put your work on screen
+    
     pygame.display.flip()
 
     clock.tick(60)  # limits FPS to 60
 
 pygame.quit()
+
+#
