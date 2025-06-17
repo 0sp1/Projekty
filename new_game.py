@@ -17,6 +17,10 @@ class GameBoard():
         return [(i,j) for i in range(3) for j in range(3) if self.board[i][j] == " "]
 
     def draw_O(self):
+        positions = {(0,0) : (100, 100), (0,1): (300, 100), (0,2): (500, 100),
+                     (1,0) : (100, 300), (1,1): (300, 300), (1,2): (500, 300),
+                     (2,0) : (100, 500), (2,1): (300, 500), (2,2): (500, 500)
+                     }
         pass
     def draw_X(self):
         pass
