@@ -16,14 +16,26 @@ class GameBoard():
     def empty_cells(self):
         return [(i,j) for i in range(3) for j in range(3) if self.board[i][j] == " "]
 
-    def draw_O(self):
+    def O_positions(self):
         positions = {(0,0) : (100, 100), (0,1): (300, 100), (0,2): (500, 100),
                      (1,0) : (100, 300), (1,1): (300, 300), (1,2): (500, 300),
                      (2,0) : (100, 500), (2,1): (300, 500), (2,2): (500, 500)
                      }
-        pass
+        return positions
+    
     def draw_X(self):
         pass
+
+def player_move(game):
+    if event.type == pygame.MOUSEBUTTONDOWN:
+        col, row =  pygame.mouse.get_pos()
+        col = col//cell_size
+        row = row//cell_size
+        if (row, col) in game.empty_cells():
+            print(game.empty_cells())
+            game.board[row][col] = "X"
+            print(col, row)
+    
 
 # pygame setup
 pygame.init()
@@ -50,15 +62,10 @@ while running:
     screen.fill("grey")
 
     # RENDER YOUR GAME HERE
+    game.board[0][0] = "X"
+    player_move(game)
     game.draw_grid(screen, cell_size)
     
-    if event.type == pygame.MOUSEBUTTONDOWN:
-        col, row =  pygame.mouse.get_pos()
-        col = col//cell_size
-        row = row//cell_size
-        if game.empty_cells(row, col):
-            game.board[row][col] = "X"
-            print(col, row)
     
     
     pygame.display.flip()
