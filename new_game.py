@@ -23,15 +23,21 @@ class GameBoard():
                      }
         return positions
     
-    def draw_X(self, row, col):
-        pygame.drwa.line(screen, "black", ())
+    def draw_X(self, row, col, cell_size):
+        position_x = col* cell_size
+        prosition_y = row * cell_size
+        
+        pygame.draw.line(screen, "black", (position_x+20, prosition_y+20), (position_x + cell_size - 20, prosition_y + cell_size - 20), width=4)
 
-def player_move(game):
+        pygame.draw.line(screen, "black", (position_x + cell_size - 20, prosition_y + 20), (position_x + 20, prosition_y + cell_size - 20),width=4)
+
+def player_move(game, cell_size):
     if event.type == pygame.MOUSEBUTTONDOWN:
         col, row =  pygame.mouse.get_pos()
         col = col//cell_size
         row = row//cell_size
         if (row, col) in game.empty_cells():
+            game.draw_X(row, col, cell_size)
             game.board[row][col] = "X"
     
 
@@ -45,10 +51,6 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 running = True
 
-player_symbol = "X" 
-computer_symbol = "O"
-turn = player_symbol
-
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
@@ -60,8 +62,8 @@ while running:
     screen.fill("grey")
 
     # RENDER YOUR GAME HERE
-    game.board[0][0] = "X"
-    player_move(game)
+    player_move(game, cell_size)
+
     game.draw_grid(screen, cell_size)
     
     
