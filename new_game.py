@@ -23,8 +23,8 @@ class GameBoard():
                      }
         return positions
     
-    def draw_X(self):
-        pass
+    def draw_X(self, row, col):
+        pygame.drwa.line(screen, "black", ())
 
 def player_move(game):
     if event.type == pygame.MOUSEBUTTONDOWN:
@@ -32,9 +32,7 @@ def player_move(game):
         col = col//cell_size
         row = row//cell_size
         if (row, col) in game.empty_cells():
-            print(game.empty_cells())
             game.board[row][col] = "X"
-            print(col, row)
     
 
 # pygame setup
