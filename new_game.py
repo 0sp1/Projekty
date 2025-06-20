@@ -1,4 +1,4 @@
-import pygame
+import pygame, random
 
 class GameBoard():
     def __init__(self):
@@ -16,31 +16,34 @@ class GameBoard():
     def empty_cells(self):
         return [(i,j) for i in range(3) for j in range(3) if self.board[i][j] == " "]
 
-    def O_positions(self):
-        positions = {(0,0) : (100, 100), (0,1): (300, 100), (0,2): (500, 100),
-                     (1,0) : (100, 300), (1,1): (300, 300), (1,2): (500, 300),
-                     (2,0) : (100, 500), (2,1): (300, 500), (2,2): (500, 500)
-                     }
-        return positions
+    def O_draw(self, screen, row, col, cell_size):
+        position_x = col*cell_size
+        position_y = row*cell_size
+        pygame.draw.circle(screen, "black", (position_x+100, position_y+100), 80 , 4)
     
-    def draw_X(self, row, col, cell_size):
+    def X_draw(self, screen, row, col, cell_size):
         position_x = col* cell_size
-        prosition_y = row * cell_size
+        position_y = row * cell_size
         
-        pygame.draw.line(screen, "black", (position_x+20, prosition_y+20), (position_x + cell_size - 20, prosition_y + cell_size - 20), width=4)
+        pygame.draw.line(screen, "black", (position_x+20, position_y+20), (position_x + cell_size - 20, position_y + cell_size - 20), width=5)
 
-        pygame.draw.line(screen, "black", (position_x + cell_size - 20, prosition_y + 20), (position_x + 20, prosition_y + cell_size - 20),width=4)
+        pygame.draw.line(screen, "black", (position_x + cell_size - 20, position_y + 20), (position_x + 20, position_y + cell_size - 20),width=5)
 
 def player_move(game, cell_size):
-    if event.type == pygame.MOUSEBUTTONDOWN:
-        col, row =  pygame.mouse.get_pos()
-        col = col//cell_size
-        row = row//cell_size
-        if (row, col) in game.empty_cells():
-            game.draw_X(row, col, cell_size)
-            game.board[row][col] = "X"
-    
+            col, row =  pygame.mouse.get_pos()
+            col = col//cell_size
+            row = row//cell_size
+            if (row, col) in game.empty_cells():
+                game.board[row][col] = "X"
+            else:
+                print("spot taken!")
 
+def computer_move(game):
+    empty = game.empty_cells()
+    if empty:
+        row, col = random.choice(empty)
+        game.board[row][col] = "O"
+        
 # pygame setup
 pygame.init()
 WIDTH, HEIGHT = 600, 600
@@ -51,27 +54,38 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 running = True
 
+player_turn  = True
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
+        elif player_turn and event.type == pygame.MOUSEBUTTONDOWN:
+            player_move(game, cell_size)
+            player_turn = False
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("grey")
 
     # RENDER YOUR GAME HERE
-    player_move(game, cell_size)
+    for i, row in enumerate(game.board):
+        for j, col in enumerate(row):
+            if game.board[i][j] == "X":
+                game.X_draw(screen, i, j, cell_size)
+            elif game.board[i][j] == "O":
+                game.O_draw(screen, i, j, cell_size)
+
+    if not player_turn:
+        computer_move(game)
+        player_turn = True
+
+    if len(game.empty_cells()) == 0:
+        print("It's a draw! ")
+        break
 
     game.draw_grid(screen, cell_size)
-    
-    
-    
     pygame.display.flip()
 
     clock.tick(60)  # limits FPS to 60
 
 pygame.quit()
-
-#
