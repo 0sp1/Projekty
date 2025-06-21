@@ -29,6 +29,15 @@ class GameBoard():
 
         pygame.draw.line(screen, "black", (position_x + cell_size - 20, position_y + 20), (position_x + 20, position_y + cell_size - 20),width=5)
 
+    def win_conditions(self, symbol):
+        for i in range(3):
+            if all(self.board[i][j] == symbol for j in range(3)) or all(self.board[j][i] == symbol for j in range(3)):
+                return True
+
+        if all(self.board[i][i] == symbol for i in range(3)) or all(self.board[i][2-i] == symbol for i in range(3)):
+            return True
+        return False
+
 def player_move(game, cell_size):
             col, row =  pygame.mouse.get_pos()
             col = col//cell_size
@@ -55,6 +64,7 @@ clock = pygame.time.Clock()
 running = True
 
 player_turn  = True
+current_symbol = ""
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
@@ -63,6 +73,7 @@ while running:
             running = False
         elif player_turn and event.type == pygame.MOUSEBUTTONDOWN:
             player_move(game, cell_size)
+            current_symbol = "X"
             player_turn = False
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("grey")
@@ -74,15 +85,20 @@ while running:
                 game.X_draw(screen, i, j, cell_size)
             elif game.board[i][j] == "O":
                 game.O_draw(screen, i, j, cell_size)
-
-    if not player_turn:
-        computer_move(game)
-        player_turn = True
+                
+    if game.win_conditions(current_symbol):
+        print(f"The winner is {current_symbol}! ")    
+        break
 
     if len(game.empty_cells()) == 0:
         print("It's a draw! ")
         break
 
+    if not player_turn:
+        computer_move(game)
+        current_symbol = "O"
+        player_turn = True
+    
     game.draw_grid(screen, cell_size)
     pygame.display.flip()
 
