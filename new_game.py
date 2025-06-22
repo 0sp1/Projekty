@@ -87,18 +87,20 @@ while running:
                 game.O_draw(screen, i, j, cell_size)
                 
     if game.win_conditions(current_symbol):
-        print(f"The winner is {current_symbol}! ")    
+        print(f"The winner is {current_symbol}! ")   
+        pygame.time.delay(3000) 
         break
 
     if len(game.empty_cells()) == 0:
         print("It's a draw! ")
+        pygame.time.delay(3000)
         break
 
     if not player_turn:
         computer_move(game)
         current_symbol = "O"
         player_turn = True
-    
+
     game.draw_grid(screen, cell_size)
     pygame.display.flip()
 
