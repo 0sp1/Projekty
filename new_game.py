@@ -52,6 +52,7 @@ def computer_move(game):
     if empty:
         row, col = random.choice(empty)
         game.board[row][col] = "O"
+
         
 # pygame setup
 pygame.init()
@@ -65,6 +66,7 @@ running = True
 
 player_turn  = True
 current_symbol = ""
+game = False
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
@@ -72,9 +74,21 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif player_turn and event.type == pygame.MOUSEBUTTONDOWN:
-            player_move(game, cell_size)
             current_symbol = "X"
             player_turn = False
+            player_move(game, cell_size)
+
+    if not player_turn and not game_over:
+        pygame.time.delay(500)  # small delay to simulate thinking
+        computer_move(game)
+        if game.win_conditions("O"):
+            winner = "O"
+            game_over = True
+        elif len(game.empty_cells()) == 0:
+            winner = "Draw"
+            game_over = True
+        else:
+            player_turn = True
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("grey")
 
@@ -97,9 +111,9 @@ while running:
         break
 
     if not player_turn:
-        computer_move(game)
         current_symbol = "O"
         player_turn = True
+        computer_move(game)
 
     game.draw_grid(screen, cell_size)
     pygame.display.flip()
