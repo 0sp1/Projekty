@@ -65,30 +65,37 @@ clock = pygame.time.Clock()
 running = True
 
 player_turn  = True
-current_symbol = ""
-game = False
+winner = None
+game_over = False
+
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif player_turn and event.type == pygame.MOUSEBUTTONDOWN:
-            current_symbol = "X"
-            player_turn = False
+        elif player_turn and not game_over and  event.type == pygame.MOUSEBUTTONDOWN:
             player_move(game, cell_size)
+            if game.win_conditions("X"):
+                winner = "X"
+                game_over = True
+            elif len(game.empty_cells()) == 0:
+                winner = "draw"
+                game_over = True
+            else:
+                player_turn = False
 
     if not player_turn and not game_over:
-        pygame.time.delay(500)  # small delay to simulate thinking
         computer_move(game)
         if game.win_conditions("O"):
             winner = "O"
             game_over = True
         elif len(game.empty_cells()) == 0:
-            winner = "Draw"
+            winner = "draw"
             game_over = True
         else:
             player_turn = True
+
     # fill the screen with a color to wipe away anything from last frame
     screen.fill("grey")
 
@@ -99,21 +106,12 @@ while running:
                 game.X_draw(screen, i, j, cell_size)
             elif game.board[i][j] == "O":
                 game.O_draw(screen, i, j, cell_size)
-                
-    if game.win_conditions(current_symbol):
-        print(f"The winner is {current_symbol}! ")   
-        pygame.time.delay(3000) 
-        break
 
-    if len(game.empty_cells()) == 0:
-        print("It's a draw! ")
-        pygame.time.delay(3000)
-        break
-
-    if not player_turn:
-        current_symbol = "O"
-        player_turn = True
-        computer_move(game)
+    if game_over:
+        if winner == "drwa":
+            print("It's a drwa! ")
+        else:
+            print(f"The winner is {winner}")
 
     game.draw_grid(screen, cell_size)
     pygame.display.flip()
