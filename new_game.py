@@ -53,7 +53,10 @@ def computer_move(game):
         row, col = random.choice(empty)
         game.board[row][col] = "O"
 
-        
+
+
+
+
 # pygame setup
 pygame.init()
 WIDTH, HEIGHT = 600, 600
@@ -108,8 +111,8 @@ while running:
                 game.O_draw(screen, i, j, cell_size)
 
     if game_over:
-        if winner == "drwa":
-            print("It's a drwa! ")
+        if winner == "draw":
+            print("It's a draw! ")
         else:
             print(f"The winner is {winner}")
 
