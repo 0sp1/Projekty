@@ -13,4 +13,13 @@ async def on_ready():
 async def hello(ctx, arg):
     await ctx.send(f"What the fuck {arg}")
 
-bot.run("token")
+@bot.command()
+async def play(ctx, arg):
+    if ctx.author.voice:
+        channel = ctx.author.voice.channel
+        await channel.connect()
+        await ctx.send(f"Joined `{channel}`!{arg}")
+    else:
+        await ctx.send("You must be in a voice channel first.")
+
+bot.run("")
