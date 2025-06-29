@@ -27,4 +27,12 @@ async def play(ctx, url):
         await ctx.send("Join a voice channel first.")
         return
 
+@bot.command()
+async def leave(ctx):
+    if ctx.voice_client:
+        await ctx.voice_client.disconnect()
+        await ctx.send("Left the voice channel.")
+    else:
+        await ctx.send("I'm not in a voice channel.")
+
 bot.run("")
