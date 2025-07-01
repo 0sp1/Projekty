@@ -46,17 +46,6 @@ async def play(ctx, url):
         }],
     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
-        filename = ydl.prepare_filename(info).replace('.webm', '.mp3').replace('.m4a', '.mp3')
-
-    # Play audio
-    source = discord.FFmpegPCMAudio(filename)
-    if voice_client.is_playing():
-        voice_client.stop()
-    voice_client.play(source, after=lambda e: print("Playback finished"))
-    await ctx.send(f"Now playing: **{info['title']}**")
-
 async def play(ctx, url):
     if not ctx.author.voice:
         await ctx.send("Join a voice channel first.")
