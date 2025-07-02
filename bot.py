@@ -46,11 +46,6 @@ async def play(ctx, url):
         }],
     }
 
-async def play(ctx, url):
-    if not ctx.author.voice:
-        await ctx.send("Join a voice channel first.")
-        return
-
 @bot.command()
 async def leave(ctx):
     if ctx.voice_client:
