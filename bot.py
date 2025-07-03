@@ -34,17 +34,6 @@ async def play(ctx, url):
         voice_client = await channel.connect()
 
     # Download audio
-    await ctx.send("Downloading audio...")
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': 'song.%(ext)s',
-        'quiet': True,
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-    }
 
 @bot.command()
 async def leave(ctx):
@@ -53,5 +42,3 @@ async def leave(ctx):
         await ctx.send("Left the voice channel.")
     else:
         await ctx.send("I'm not in a voice channel.")
-
-bot.run("")
