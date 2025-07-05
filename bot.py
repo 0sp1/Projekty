@@ -44,10 +44,6 @@ async def play(ctx, url):
         }],
     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=True)
-        filename = ydl.prepare_filename(info).replace('.webm', '.mp3').replace('.m4a', '.mp3')
-
     # Play audio
     source = discord.FFmpegPCMAudio(filename)
     if voice_client.is_playing():
