@@ -53,9 +53,14 @@ def computer_move(game):
         row, col = random.choice(empty)
         game.board[row][col] = "O"
 
-
-
-
+def minimax(board, depth, is_maximizing, ai_player, human_player):
+    winner = game.win_conditions(board)
+    if winner == ai_player:
+        return 1
+    elif winner == human_player:
+        return -1
+    elif game.empty_cells(board):
+        return 0
 
 # pygame setup
 pygame.init()
