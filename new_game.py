@@ -1,4 +1,4 @@
-import pygame, random
+import pygame, random, math
 
 class GameBoard():
     def __init__(self):
@@ -61,6 +61,17 @@ def minimax(board, depth, is_maximizing, ai_player, human_player):
         return -1
     elif game.empty_cells(board):
         return 0
+    
+    if is_maximizing:
+        best_score = -math.inf
+        for i in range(3):
+            for j in range(3):
+                if board[i][j] == ' ':
+                    board[i][j] = ai_player
+                    score = minimax(board, depth + 1, False, ai_player, human_player)
+                    board[i][j] = ' '
+                    best_score = max(score, best_score)
+        return best_score
 
 # pygame setup
 pygame.init()
