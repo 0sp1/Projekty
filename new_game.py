@@ -72,6 +72,16 @@ def minimax(board, depth, is_maximizing, ai_player, human_player):
                     board[i][j] = ' '
                     best_score = max(score, best_score)
         return best_score
+    else:
+        best_score = math.inf
+        for i in range(3):
+            for j in range(3):
+                if board[i][j] == ' ':
+                    board[i][j] = human_player
+                    score = minimax(board, depth + 1, True, ai_player, human_player)
+                    board[i][j] = ' '
+                    best_score = min(score, best_score)
+        return best_score
 
 def best_move(board, ai_player, human_player):
     best_score = -math.inf
