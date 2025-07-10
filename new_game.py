@@ -86,18 +86,7 @@ def minimax(board, depth, is_maximizing, ai_player, human_player):
 def best_move(board, ai_player, human_player):
     best_score = -math.inf
     move = (-1, -1)
-    for i in range(3):
-        for j in range(3):
-            if board[i][j] == ' ':
-                board[i][j] = ai_player
-                score = minimax(board, 0, False, ai_player, human_player)
-                board[i][j] = ' '
-                if score > best_score:
-                    best_score = score
-                    move = (i, j)
-    return move
 
-# pygame setup
 pygame.init()
 WIDTH, HEIGHT = 600, 600
 cell_size = 200
