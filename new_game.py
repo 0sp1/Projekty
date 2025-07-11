@@ -54,14 +54,15 @@ def computer_move(game):
         game.board[row][col] = "O"
 
 def minimax(board, depth, is_maximizing, ai_player, human_player):
-    winner = game.win_conditions(board)
+    def minimax(board, depth, is_maximizing, ai_player, human_player):
+    winner = check_winner(board)
     if winner == ai_player:
         return 1
     elif winner == human_player:
         return -1
-    elif game.empty_cells(board):
+    elif is_full(board):
         return 0
-    
+
     if is_maximizing:
         best_score = -math.inf
         for i in range(3):
@@ -81,7 +82,8 @@ def minimax(board, depth, is_maximizing, ai_player, human_player):
                     score = minimax(board, depth + 1, True, ai_player, human_player)
                     board[i][j] = ' '
                     best_score = min(score, best_score)
-        return best_score
+        return best_scorewinner = game.win_conditions(board)
+    
 
 def best_move(board, ai_player, human_player):
     best_score = -math.inf
