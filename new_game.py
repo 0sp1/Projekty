@@ -81,10 +81,6 @@ def minimax(board, depth, is_maximizing, ai_player, human_player):
                     board[i][j] = human_player
                     score = minimax(board, depth + 1, True, ai_player, human_player)
                     board[i][j] = ' '
-                    best_score = min(score, best_score)
-        return best_scorewinner = game.win_conditions(board)
-    
-
 def best_move(board, ai_player, human_player):
     best_score = -math.inf
     move = (-1, -1)
