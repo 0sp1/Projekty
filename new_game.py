@@ -84,8 +84,6 @@ def minimax(board, depth, is_maximizing, ai_player, human_player):
                     
 def best_move(board, ai_player, human_player):
     best_score = -math.inf
-    move = (-1, -1)def best_move(board, ai_player, human_player):
-    best_score = -math.inf
     move = (-1, -1)
     for i in range(3):
         for j in range(3):
