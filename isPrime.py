@@ -1,9 +1,15 @@
-numbers = [i for i in range(2,1001)]
+numbers = [4]
 prime = []
+
 for number in numbers:
-    for x in range(2, number+1):
-        if number%x == 0:
+    if number < 2:
+        continue  # Skip numbers less than 2 (not prime)
+    is_prime = True
+    for x in range(2, int(number ** 0.5) + 1):
+        if number % x == 0:
+            is_prime = False
             break
-    prime.append(number)
-        
+    if is_prime:
+        prime.append(number)
+
 print(prime)
