@@ -1,125 +1,75 @@
-# To-Do List App (Konsolowa)
 
-tasks = []
-
-def show_menu():
-    print("\n--- MENU ---")
-    print("1. Pokaż zadania")
-    print("2. Dodaj zadanie")
-    print("3. Usuń zadanie")
-    print("4. Oznacz jako ukończone")
-    print("5. Wyjście")
-
-def show_tasks():
-    if not tasks:
-        print("Brak zadań.")
-    else:
-        for idx, task in enumerate(tasks, 1):
-            status = "✓" if task['done'] else "✗"
-            print(f"{idx}. [{status}] {task['title']}")
-
-def add_task():
-    title = input("Wpisz treść zadania: ")
-    tasks.append({'title': title, 'done': False})
-    print("Dodano zadanie.")
-
-def delete_task():
-    show_tasks()
-    try:
-        idx = int(input("Numer zadania do usunięcia: ")) - 1
-        if 0 <= idx < len(tasks):
-            removed = tasks.pop(idx)
-            print(f"Usunięto zadanie: {removed['title']}")
-        else:
-            print("Nieprawidłowy numer.")
-    except ValueError:
-        print("Wprowadź liczbę.")
-
-def mark_done():
-    show_tasks()
-    try:
-        idx = int(input("Numer zadania do oznaczenia jako ukończone: ")) - 1
-        if 0 <= idx < len(tasks):
-            tasks[idx]['done'] = True
-            print(f"Zadanie \"{tasks[idx]['title']}\" oznaczone jako ukończone.")
-        else:
-            print("Nieprawidłowy numer.")
-    except ValueError:
-        print("Wprowadź liczbę.")
-
-# Główna pętla
-while True:
-    show_menu()
-    choice = input("Wybierz opcję (1-5): ")
-    
-    if choice == '1':
-        show_tasks()
-    elif choice == '2':
-        add_task()
-    elif choice == '3':
-        delete_task()
-    elif choice == '4':
-        mark_done()
-    elif choice == '5':
-        print("Do zobaczenia!")
-        break
-    else:
-        print("Nieprawidłowy wybór. Spróbuj ponownie.")
+import random
 import os
 
-TODO_FILE = "todo.txt"
+HIGH_SCORE_FILE = "high_score.txt"
 
-def load_tasks():
-    if not os.path.exists(TODO_FILE):
-        return []
-    with open(TODO_FILE, "r") as file:
-        return [line.strip() for line in file.readlines()]
+def load_high_score():
+    if not os.path.exists(HIGH_SCORE_FILE):
+        return None
+    with open(HIGH_SCORE_FILE, "r") as file:
+        try:
+            return int(file.read().strip())
+        except ValueError:
+            return None
 
-def save_tasks(tasks):
-    with open(TODO_FILE, "w") as file:
-        for task in tasks:
-            file.write(task + "\n")
+def save_high_score(score):
+    with open(HIGH_SCORE_FILE, "w") as file:
+        file.write(str(score))
 
-def show_tasks(tasks):
-    if not tasks:
-        print("No tasks found.")
-    else:
-        print("\nYour To-Do List:")
-        for idx, task in enumerate(tasks, 1):
-            print(f"{idx}. {task}")
-    print()
+def get_valid_guess():
+    while True:
+        try:
+            guess = int(input("Enter your guess (1-100): "))
+            if 1 <= guess <= 100:
+                return guess
+            else:
+                print("Number must be between 1 and 100.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
 
-def add_task(tasks):
-    task = input("Enter a new task: ")
-    tasks.append(task)
-    print("Task added.")
+def play_game():
+    secret = random.randint(1, 100)
+    attempts = 0
+    print("I'm thinking of a number between 1 and 100.")
 
-def delete_task(tasks):
-    show_tasks(tasks)
-    try:
-        index = int(input("Enter task number to delete: ")) - 1
-        if 0 <= index < len(tasks):
-            removed = tasks.pop(index)
-            print(f"Deleted: {removed}")
+    while True:
+        guess = get_valid_guess()
+        attempts += 1
+        if guess < secret:
+            print("Too low!")
+        elif guess > secret:
+            print("Too high!")
         else:
-            print("Invalid task number.")
-    except ValueError:
-        print("Please enter a number.")
+            print(f"Correct! The number was {secret}.")
+            print(f"You guessed it in {attempts} attempts.")
+            return attempts
+
+def main_menu():
+    print("\n--- Number Guessing Game ---")
+    print("1. Play")
+    print("2. View High Score")
+    print("3. Exit")
 
 def main():
-    tasks = load_tasks()
+    high_score = load_high_score()
+
     while True:
-        print("\nMenu:\n1. Show Tasks\n2. Add Task\n3. Delete Task\n4. Exit")
+        main_menu()
         choice = input("Choose an option: ")
-        if choice == '1':
-            show_tasks(tasks)
-        elif choice == '2':
-            add_task(tasks)
-        elif choice == '3':
-            delete_task(tasks)
-        elif choice == '4':
-            save_tasks(tasks)
-            print("Goodbye!")
+        if choice == "1":
+            score = play_game()
+            if high_score is None or score < high_score:
+                print("New high score!")
+                save_high_score(score)
+                high_score = score
+        elif choice == "2":
+            if high_score is None:
+                print("No high score yet.")
+            else:
+                print(f"High score: {high_score} attempts")
+        elif choice == "3":
+            print("Thanks for playing!")
             break
         else:
             print("Invalid choice.")
