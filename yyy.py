@@ -1,44 +1,53 @@
-import requests
+import random
+import time
 
-API_KEY = "your_api_key_here"  # Replace with your OpenWeatherMap API key
-BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
+# Quiz questions and answers
+questions = {
+    "What is the capital of France? ": "paris",
+    "What is 5 * 6? ": "30",
+    "Who wrote 'Hamlet'? ": "shakespeare",
+    "What is the boiling point of water (°C)? ": "100",
+    "Which planet is known as the Red Planet? ": "mars",
+    "What is the largest mammal? ": "blue whale",
+    "Who painted the Mona Lisa? ": "da vinci",
+    "What language is spoken in Brazil? ": "portuguese",
+    "What is the square root of 64? ": "8",
+    "Which gas do humans need to breathe? ": "oxygen"
+}
 
-def get_weather(city):
-    params = {
-        'q': city,
-        'appid': API_KEY,
-        'units': 'metric'
-    }
-    try:
-        response = requests.get(BASE_URL, params=params)
-        data = response.json()
+def ask_question(q, answer):
+    """Ask a single question and return if correct."""
+    user_answer = input(q).strip().lower()
+    if user_answer == answer:
+        print("✅ Correct!\n")
+        return True
+    else:
+        print(f"❌ Wrong! The answer was: {answer}\n")
+        return False
 
-        if data.get("cod") != 200:
-            print(f"❌ Error: {data.get('message', 'Unknown error')}")
-            return
+def quiz_game():
+    print("🎉 Welcome to the Python Quiz Game! 🎉")
+    print("You will be asked random questions. Let's see how many you can answer!\n")
+    time.sleep(1)
 
-        temp = data['main']['temp']
-        desc = data['weather'][0]['description'].capitalize()
-        humidity = data['main']['humidity']
-        wind = data['wind']['speed']
+    score = 0
+    total = 5   # number of questions to ask
+    asked = random.sample(list(questions.items()), total)
 
-        print(f"\n📍 Weather in {city.title()}:")
-        print(f"🌡️ Temp: {temp}°C")
-        print(f"🌥️ Condition: {desc}")
-        print(f"💧 Humidity: {humidity}%")
-        print(f"💨 Wind: {wind} m/s")
+    for q, a in asked:
+        if ask_question(q, a):
+            score += 1
+        time.sleep(0.5)
 
-    except Exception as e:
-        print("⚠️ Failed to fetch weather data:", e)
+    print("🎯 Quiz Over! 🎯")
+    print(f"Your final score: {score}/{total}")
 
-def main():
-    print("🌤️ Weather Checker")
-    while True:
-        city = input("\nEnter city name (or 'exit' to quit): ")
-        if city.lower() == 'exit':
-            print("👋 Goodbye!")
-            break
-        get_weather(city)
+    if score == total:
+        print("🏆 Excellent! You nailed it all!")
+    elif score >= total // 2:
+        print("👍 Good job! You got more than half right.")
+    else:
+        print("😅 Better luck next time!")
 
 if __name__ == "__main__":
-    main()
+    quiz_game()
