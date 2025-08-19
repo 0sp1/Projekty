@@ -1,68 +1,50 @@
-import sys
+import random
+import string
 
-history = []
+def generate_password(length=12, use_digits=True, use_special=True):
+    letters = string.ascii_letters
+    digits = string.digits if use_digits else ""
+    special = "!@#$%^&*()-_=+[]{};:,.<>?/" if use_special else ""
+    
+    pool = letters + digits + special
+    if not pool:
+        return "⚠️ No characters available to generate password!"
+    
+    return "".join(random.choice(pool) for _ in range(length))
 
-def add(x, y): return x + y
-def subtract(x, y): return x - y
-def multiply(x, y): return x * y
-def divide(x, y):
-    if y == 0:
-        print("❌ Cannot divide by zero.")
-        return None
-    return x / y
-
-def show_menu():
-    print("\n📱 Simple Calculator")
-    print("1. Add")
-    print("2. Subtract")
-    print("3. Multiply")
-    print("4. Divide")
-    print("5. Show History")
-    print("6. Exit")
-
-def get_numbers():
-    try:
-        x = float(input("Enter first number: "))
-        y = float(input("Enter second number: "))
-        return x, y
-    except ValueError:
-        print("⚠️ Invalid input.")
-        return None, None
+def password_strength(pwd):
+    strength = 0
+    if any(c.islower() for c in pwd): strength += 1
+    if any(c.isupper() for c in pwd): strength += 1
+    if any(c.isdigit() for c in pwd): strength += 1
+    if any(c in "!@#$%^&*()-_=+[]{};:,.<>?/" for c in pwd): strength += 1
+    
+    levels = {1: "Weak 😢", 2: "Moderate 🙂", 3: "Strong 💪", 4: "Very Strong 🔥"}
+    return levels.get(strength, "Very Weak")
 
 def main():
+    print("🔐 Random Password Generator 🔐")
     while True:
-        show_menu()
-        choice = input("Choose an option: ")
-
-        if choice == '6':
-            print("👋 Goodbye!")
-            sys.exit()
-
-        elif choice == '5':
-            if not history:
-                print("🕘 No history yet.")
-            else:
-                print("\n🧾 History:")
-                for entry in history:
-                    print(entry)
+        try:
+            length = int(input("Enter password length (min 4): "))
+            if length < 4:
+                print("⚠️ Password must be at least 4 characters.")
+                continue
+        except ValueError:
+            print("⚠️ Please enter a valid number.")
             continue
 
-        if choice not in {'1', '2', '3', '4'}:
-            print("⚠️ Invalid choice.")
-            continue
+        use_digits = input("Include digits? (y/n): ").strip().lower() == "y"
+        use_special = input("Include special chars? (y/n): ").strip().lower() == "y"
 
-        x, y = get_numbers()
-        if x is None or y is None:
-            continue
+        pwd = generate_password(length, use_digits, use_special)
+        print(f"\nGenerated Password: {pwd}")
+        print(f"Password Strength: {password_strength(pwd)}\n")
 
-        operations = {'1': add, '2': subtract, '3': multiply, '4': divide}
-        op_symbols = {'1': '+', '2': '-', '3': '*', '4': '/'}
-        result = operations[choice](x, y)
-
-        if result is not None:
-            record = f"{x} {op_symbols[choice]} {y} = {result}"
-            print("✅", record)
-            history.append(record)
+        again = input("Generate another? (y/n): ").strip().lower()
+        if again != "y":
+            print("👋 Stay safe online!")
+            break
 
 if __name__ == "__main__":
     main()
