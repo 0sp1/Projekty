@@ -19,18 +19,15 @@ class GameBoard:
         self.cols = w // cell_size
         self.rows = h // cell_size
 
-        # Initialize the board as a 2D list (all 0s for now)
         self.board = [[0 for _ in range(self.cols)] for _ in range(self.rows)]
 
     def draw_grid(self, color):
-        w, h = self.surface.get_size()
-        # Vertical lines
-        for x in range(0, w + 1, self.cell_size):
-            pygame.draw.line(self.surface, color, (x, 0), (x, h))
-        # Horizontal lines
-        for y in range(0, h + 1, self.cell_size):
-            pygame.draw.line(self.surface, color, (0, y), (w, y))
-
+        for row in range(self.rows):
+            for col in range(self.cols):
+                if self.board[row][col] == 1:
+                    color = (255,255, 0)
+                    rect = pygame.Rect(col*self.cell_size, row*self.cell_size, self.cell_size, self.cell_size)
+                    pygame.draw.rect(self.surface, color, rect, border_radius=1)
 
 def main():
     pygame.init()
@@ -45,6 +42,7 @@ def main():
 
     running = True
     while running:
+        board.board[0][0] = 1
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -56,10 +54,6 @@ def main():
 
         # Get mouse position
         mouse_x, mouse_y = pygame.mouse.get_pos()
-
-        # Draw text showing position
-        text_surface = font.render(f"Mouse: ({mouse_x}, {mouse_y})", True, TEXT_COLOR)
-        screen.blit(text_surface, (10, 10))
 
         pygame.display.flip()
         clock.tick(60)
