@@ -2,9 +2,9 @@ import pygame
 import sys
 
 CELL_SIZE = 20
-WIDTH, HEIGHT = 640, 480
-BG_COLOR = (30, 30, 30)
-GRID_COLOR = (70, 70, 70)
+WIDTH, HEIGHT = 1000, 800
+BG_COLOR = (155, 155, 155)
+GRID_COLOR = (0, 0, 0)
 ALIVE_COLOR = (255, 255, 0)
 
 class GameBoard:
@@ -36,13 +36,22 @@ class GameBoard:
         if 0 <= row < self.rows and 0 <= col < self.cols:
             self.board[row][col] = 1 - self.board[row][col]
 
+    def neighbour_cells(self, x,y):
+        neighbour_count = 0
+        for dx in [-1,0,1]:
+            for dy in [-1,0,1]:
+                if dx == 0  and dy == 0:
+                    continue
+        n_row, n_col = x+dx, y+dy
+        if 0 <= n_row < self.rows and 0 <= n_col < self.cols:
+            neighbour_count += self.board[n_row][n_col]
+        return neighbour_count
+                
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("game of life")
     clock = pygame.time.Clock()
-
-    font = pygame.font.SysFont(None, 24)
 
     # Create board object
     board = GameBoard(screen, CELL_SIZE)
@@ -60,8 +69,6 @@ def main():
 
         # Use method from GameBoard
         board.draw_grid()
-
-        # Get mouse position
         
 
         pygame.display.flip()
@@ -72,4 +79,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
