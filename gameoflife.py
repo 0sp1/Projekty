@@ -1,5 +1,6 @@
 import pygame
 import sys
+import random
 
 CELL_SIZE = 20
 WIDTH, HEIGHT = 1000, 800
@@ -36,17 +37,38 @@ class GameBoard:
         if 0 <= row < self.rows and 0 <= col < self.cols:
             self.board[row][col] = 1 - self.board[row][col]
 
-    def neighbour_cells(self, x,y):
-        neighbour_count = 0
+    def neighbor_cells(self, x,y):
+        neighbor_count = 0
         for dx in [-1,0,1]:
             for dy in [-1,0,1]:
                 if dx == 0  and dy == 0:
                     continue
-        n_row, n_col = x+dx, y+dy
-        if 0 <= n_row < self.rows and 0 <= n_col < self.cols:
-            neighbour_count += self.board[n_row][n_col]
-        return neighbour_count
-                
+                n_row, n_col = x + dx, y + dy
+                if 0 <= n_row < self.rows and 0 <= n_col < self.cols:
+                    neighbor_count += self.board[n_row][n_col]
+
+        return neighbor_count
+    
+    def update(self):
+        new_board = [[0 for _ in range(self.cols)] for _ in range(self.rows)]
+        for row in range(self.rows):
+            for col in range(self.cols):
+                alive_cell = self.board[row][col] == 1
+                neighbor = self.neighbor_cells(row, col)
+
+                if alive_cell:
+                    if 2 > neighbor or neighbor > 3:
+                        new_board[row][col] = 0
+                    else:
+                        new_board[row][col] = 1
+                else:
+                    if neighbor == 3:
+                        new_board[row][col] = 1
+        self.board = new_board
+
+    def clear(self):
+        self.board = [[0 for _ in range(self.cols)] for _ in range(self.rows)]
+        
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -55,29 +77,37 @@ def main():
 
     # Create board object
     board = GameBoard(screen, CELL_SIZE)
-
+    running_simulation = False
     running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
+
+            elif event.type == pygame.MOUSEBUTTONDOWN and not running_simulation:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 board.toggle_cell(mouse_x, mouse_y)
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    running_simulation = not running_simulation 
+                elif event.key == pygame.K_c:
+                    board.clear()
+                elif event.key == pygame.K_r:
+                    board.random()
 
         screen.fill(BG_COLOR)
 
         # Use method from GameBoard
         board.draw_grid()
-        
-
+        if running_simulation:
+            board.update()
+                    
         pygame.display.flip()
-        clock.tick(60)
+        clock.tick(10)
 
     pygame.quit()
     sys.exit()
 
-
 if __name__ == "__main__":
-
     main()
