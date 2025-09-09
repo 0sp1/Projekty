@@ -69,6 +69,9 @@ class GameBoard:
     def clear(self):
         self.board = [[0 for _ in range(self.cols)] for _ in range(self.rows)]
         
+    def randomize(self):
+        self.board = [[random.randint(0,1) for _ in range(self.cols)] for _ in range(self.rows)]
+        
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -94,7 +97,7 @@ def main():
                 elif event.key == pygame.K_c:
                     board.clear()
                 elif event.key == pygame.K_r:
-                    board.random()
+                    board.randomize()
 
         screen.fill(BG_COLOR)
 
