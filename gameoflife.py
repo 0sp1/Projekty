@@ -102,7 +102,11 @@ def main():
         screen.fill(BG_COLOR)
 
         # Use method from GameBoard
+        font = pygame.font.SysFont(None, 36)
         board.draw_grid()
+        status_text = "Running" if running_simulation else "Paused"
+        text_surface = font.render(status_text, True, (0, 0, 0))  # black text
+        screen.blit(text_surface, (10, 10))
         if running_simulation:
             board.update()
                     
