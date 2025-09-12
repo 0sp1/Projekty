@@ -26,3 +26,35 @@ class GuessingGame:
         print("I’m thinking of a number between 1 and 100.")
         number = random.randint(1, 100)
         attempts = 0
+
+        while True:
+            try:
+                guess = int(input("Enter your guess: "))
+                attempts += 1
+                if guess < number:
+                    print("Too low!")
+                elif guess > number:
+                    print("Too high!")
+                else:
+                    print(f"Correct! You guessed it in {attempts} attempts.")
+                    if self.best_score is None or attempts < self.best_score:
+                        self.best_score = attempts
+                        self.save_score()
+                        print("New best score!")
+                    else:
+                        print(f"Best score so far: {self.best_score}")
+                    break
+            except ValueError:
+                print("Please enter a valid number.")
+
+def main():
+    game = GuessingGame()
+    while True:
+        game.play()
+        again = input("Play again? (y/n): ").lower()
+        if again != "y":
+            print("Thanks for playing!")
+            break
+
+if __name__ == "__main__":
+    main()
