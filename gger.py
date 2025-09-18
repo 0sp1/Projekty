@@ -59,7 +59,31 @@ class TaskManager:
                 self.tasks = [Task.from_dict(item) for item in data]
 
 def menu():
-    pass
+    manager = TaskManager()
+    while True:
+        print("\nTask Manager")
+        print("1. Add Task")
+        print("2. List Tasks")
+        print("3. Mark Task Completed")
+        print("4. Exit")
+        choice = input("Choose an option: ")
+
+        if choice == "1":
+            title = input("Enter task title: ")
+            due_date = input("Enter due date (YYYY-MM-DD) or leave empty: ")
+            due_date = due_date if due_date else None
+            manager.add_task(title, due_date)
+        elif choice == "2":
+            manager.list_tasks()
+        elif choice == "3":
+            manager.list_tasks()
+            idx = int(input("Enter task number: ")) - 1
+            manager.mark_completed(idx)
+        elif choice == "4":
+            print("Goodbye!")
+            break
+        else:
+            print("Invalid choice. Try again.")
 
 if __name__ == "__main__":
     menu()
