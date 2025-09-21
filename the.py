@@ -1,70 +1,84 @@
-import random
+import json
 import os
 
-SCORE_FILE = "rps_score.txt"
-CHOICES = ["rock", "paper", "scissors"]
+class Contact:
+    def __init__(self, name, phone, email=""):
+        self.name = name
+        self.phone = phone
+        self.email = email
 
-def load_score():
-    if not os.path.exists(SCORE_FILE):
-        return {"wins": 0, "losses": 0, "ties": 0}
-    with open(SCORE_FILE, "r") as file:
-        data = file.read().strip().split(",")
-        return {"wins": int(data[0]), "losses": int(data[1]), "ties": int(data[2])}
+    def to_dict(self):
+        return {"name": self.name, "phone": self.phone, "email": self.email}
 
-def save_score(score):
-    with open(SCORE_FILE, "w") as file:
-        file.write(f"{score['wins']},{score['losses']},{score['ties']}")
+    @staticmethod
+    def from_dict(data):
+        return Contact(data["name"], data["phone"], data.get("email", ""))
 
-def get_user_choice():
+class ContactBook:
+    def __init__(self, filename="contacts.json"):
+        self.filename = filename
+        self.contacts = []
+        self.load_contacts()
+
+    def load_contacts(self):
+        if os.path.exists(self.filename):
+            with open(self.filename, "r") as f:
+                data = json.load(f)
+                self.contacts = [Contact.from_dict(c) for c in data]
+
+    def save_contacts(self):
+        with open(self.filename, "w") as f:
+            json.dump([c.to_dict() for c in self.contacts], f, indent=2)
+
+    def add_contact(self, name, phone, email=""):
+        self.contacts.append(Contact(name, phone, email))
+        self.save_contacts()
+
+    def list_contacts(self):
+        if not self.contacts:
+            print("No contacts found.")
+        for i, c in enumerate(self.contacts, 1):
+            print(f"{i}. {c.name} - {c.phone} ({c.email})")
+
+    def search(self, keyword):
+        results = [c for c in self.contacts if keyword.lower() in c.name.lower()]
+        for c in results:
+            print(f"{c.name} - {c.phone} ({c.email})")
+        if not results:
+            print("No matches found.")
+
+    def delete(self, name):
+        self.contacts = [c for c in self.contacts if c.name.lower() != name.lower()]
+        self.save_contacts()
+
+def menu():
+    book = ContactBook()
     while True:
-        choice = input("Rock, Paper, or Scissors? ").lower()
-        if choice in CHOICES:
-            return choice
-        print("Invalid choice. Try again.")
+        print("\nContact Book")
+        print("1. Add Contact")
+        print("2. List Contacts")
+        print("3. Search Contact")
+        print("4. Delete Contact")
+        print("5. Exit")
+        choice = input("Choose an option: ")
 
-def get_computer_choice():
-    return random.choice(CHOICES)
-
-def determine_winner(user, comp):
-    if user == comp:
-        return "tie"
-    elif (user == "rock" and comp == "scissors") or \
-         (user == "paper" and comp == "rock") or \
-         (user == "scissors" and comp == "paper"):
-        return "win"
-    else:
-        return "loss"
-
-def display_score(score):
-    print(f"Wins: {score['wins']} | Losses: {score['losses']} | Ties: {score['ties']}")
-
-def main():
-    score = load_score()
-    print("=== Rock, Paper, Scissors ===")
-
-    while True:
-        user_choice = get_user_choice()
-        comp_choice = get_computer_choice()
-        print(f"Computer chose: {comp_choice}")
-
-        result = determine_winner(user_choice, comp_choice)
-
-        if result == "win":
-            print("You win!")
-            score["wins"] += 1
-        elif result == "loss":
-            print("You lose!")
-            score["losses"] += 1
-        else:
-            print("It's a tie.")
-            score["ties"] += 1
-
-        save_score(score)
-        display_score(score)
-
-        if input("Play again? (y/n): ").lower() != "y":
-            print("Thanks for playing!")
+        if choice == "1":
+            name = input("Name: ")
+            phone = input("Phone: ")
+            email = input("Email (optional): ")
+            book.add_contact(name, phone, email)
+        elif choice == "2":
+            book.list_contacts()
+        elif choice == "3":
+            keyword = input("Enter search keyword: ")
+            book.search(keyword)
+        elif choice == "4":
+            name = input("Enter name to delete: ")
+            book.delete(name)
+        elif choice == "5":
             break
+        else:
+            print("Invalid choice.")
 
 if __name__ == "__main__":
-    main()
+    menu()
