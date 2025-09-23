@@ -1,3 +1,4 @@
+
 import json
 import os
 
@@ -44,6 +45,15 @@ class GradeBook:
             avg = round(s.average(), 2)
             print(f"{s.name}: {s.grades} (Avg: {avg})")
 
+    def rank_students(self):
+        if not self.students:
+            print("No students available.")
+            return
+        ranked = sorted(self.students, key=lambda s: s.average(), reverse=True)
+        print("\nStudent Rankings:")
+        for i, s in enumerate(ranked, 1):
+            print(f"{i}. {s.name} - Avg: {round(s.average(), 2)}")
+
     def save(self):
         with open(self.filename, "w") as f:
             json.dump([s.to_dict() for s in self.students], f, indent=2)
@@ -61,7 +71,8 @@ def menu():
         print("1. Add Student")
         print("2. Add Grade")
         print("3. List Students")
-        print("4. Exit")
+        print("4. Show Rankings")
+        print("5. Exit")
         choice = input("Choose an option: ")
 
         if choice == "1":
@@ -77,6 +88,8 @@ def menu():
         elif choice == "3":
             gb.list_students()
         elif choice == "4":
+            gb.rank_students()
+        elif choice == "5":
             print("Goodbye!")
             break
         else:
