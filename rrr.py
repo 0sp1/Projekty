@@ -1,4 +1,3 @@
-
 import json
 import os
 
@@ -41,6 +40,7 @@ class GradeBook:
     def list_students(self):
         if not self.students:
             print("No students available.")
+            return
         for s in self.students:
             avg = round(s.average(), 2)
             print(f"{s.name}: {s.grades} (Avg: {avg})")
@@ -53,6 +53,15 @@ class GradeBook:
         print("\nStudent Rankings:")
         for i, s in enumerate(ranked, 1):
             print(f"{i}. {s.name} - Avg: {round(s.average(), 2)}")
+
+    def delete_student(self, name):
+        before = len(self.students)
+        self.students = [s for s in self.students if s.name.lower() != name.lower()]
+        if len(self.students) < before:
+            print(f"Deleted {name} from the grade book.")
+            self.save()
+        else:
+            print("Student not found.")
 
     def save(self):
         with open(self.filename, "w") as f:
@@ -72,7 +81,8 @@ def menu():
         print("2. Add Grade")
         print("3. List Students")
         print("4. Show Rankings")
-        print("5. Exit")
+        print("5. Delete Student")
+        print("6. Exit")
         choice = input("Choose an option: ")
 
         if choice == "1":
@@ -90,6 +100,9 @@ def menu():
         elif choice == "4":
             gb.rank_students()
         elif choice == "5":
+            name = input("Enter name of student to delete: ")
+            gb.delete_student(name)
+        elif choice == "6":
             print("Goodbye!")
             break
         else:
