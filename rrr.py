@@ -1,5 +1,7 @@
+
 import json
 import os
+import csv
 
 class Student:
     def __init__(self, name, grades=None):
@@ -63,6 +65,17 @@ class GradeBook:
         else:
             print("Student not found.")
 
+    def export_csv(self, filename="grades.csv"):
+        if not self.students:
+            print("No students available to export.")
+            return
+        with open(filename, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Name", "Grades", "Average"])
+            for s in self.students:
+                writer.writerow([s.name, ", ".join(map(str, s.grades)), round(s.average(), 2)])
+        print(f"Exported data to {filename}")
+
     def save(self):
         with open(self.filename, "w") as f:
             json.dump([s.to_dict() for s in self.students], f, indent=2)
@@ -82,7 +95,8 @@ def menu():
         print("3. List Students")
         print("4. Show Rankings")
         print("5. Delete Student")
-        print("6. Exit")
+        print("6. Export to CSV")
+        print("7. Exit")
         choice = input("Choose an option: ")
 
         if choice == "1":
@@ -103,6 +117,8 @@ def menu():
             name = input("Enter name of student to delete: ")
             gb.delete_student(name)
         elif choice == "6":
+            gb.export_csv()
+        elif choice == "7":
             print("Goodbye!")
             break
         else:
