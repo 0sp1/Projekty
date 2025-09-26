@@ -1,4 +1,3 @@
-
 import json
 import os
 import csv
@@ -76,6 +75,19 @@ class GradeBook:
                 writer.writerow([s.name, ", ".join(map(str, s.grades)), round(s.average(), 2)])
         print(f"Exported data to {filename}")
 
+    def import_csv(self, filename="grades.csv"):
+        if not os.path.exists(filename):
+            print("CSV file not found.")
+            return
+        with open(filename, "r") as f:
+            reader = csv.DictReader(f)
+            self.students = []
+            for row in reader:
+                grades = [float(g.strip()) for g in row["Grades"].split(",") if g.strip()]
+                self.students.append(Student(row["Name"], grades))
+        self.save()
+        print(f"Imported data from {filename}")
+
     def save(self):
         with open(self.filename, "w") as f:
             json.dump([s.to_dict() for s in self.students], f, indent=2)
@@ -96,7 +108,8 @@ def menu():
         print("4. Show Rankings")
         print("5. Delete Student")
         print("6. Export to CSV")
-        print("7. Exit")
+        print("7. Import from CSV")
+        print("8. Exit")
         choice = input("Choose an option: ")
 
         if choice == "1":
@@ -119,6 +132,8 @@ def menu():
         elif choice == "6":
             gb.export_csv()
         elif choice == "7":
+            gb.import_csv()
+        elif choice == "8":
             print("Goodbye!")
             break
         else:
