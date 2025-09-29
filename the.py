@@ -48,8 +48,30 @@ class ContactBook:
             print("No matches found.")
 
     def delete(self, name):
+        original_count = len(self.contacts)
         self.contacts = [c for c in self.contacts if c.name.lower() != name.lower()]
-        self.save_contacts()
+        if len(self.contacts) < original_count:
+            print("Contact deleted.")
+            self.save_contacts()
+        else:
+            print("Contact not found.")
+
+    def update_contact(self, name):
+        for contact in self.contacts:
+            if contact.name.lower() == name.lower():
+                print("Leave field blank to keep current value.")
+                new_name = input(f"New name [{contact.name}]: ") or contact.name
+                new_phone = input(f"New phone [{contact.phone}]: ") or contact.phone
+                new_email = input(f"New email [{contact.email}]: ") or contact.email
+
+                contact.name = new_name
+                contact.phone = new_phone
+                contact.email = new_email
+
+                self.save_contacts()
+                print("Contact updated.")
+                return
+        print("Contact not found.")
 
 def menu():
     book = ContactBook()
@@ -60,6 +82,7 @@ def menu():
         print("3. Search Contact")
         print("4. Delete Contact")
         print("5. Exit")
+        print("6. Update Contact")
         choice = input("Choose an option: ")
 
         if choice == "1":
@@ -77,6 +100,9 @@ def menu():
             book.delete(name)
         elif choice == "5":
             break
+        elif choice == "6":
+            name = input("Enter name of contact to update: ")
+            book.update_contact(name)
         else:
             print("Invalid choice.")
 
