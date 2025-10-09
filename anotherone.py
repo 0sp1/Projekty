@@ -13,7 +13,6 @@ def generate_password(length=12, use_digits=True, use_special=True):
     if not pool:
         return "Error: No characters available to generate password."
 
-    # Ensure at least one character from each selected type
     password_chars = []
     password_chars.append(random.choice(string.ascii_lowercase))
     password_chars.append(random.choice(string.ascii_uppercase))
@@ -23,7 +22,6 @@ def generate_password(length=12, use_digits=True, use_special=True):
     if use_special:
         password_chars.append(random.choice(special))
 
-    # Fill the remaining length
     remaining_length = length - len(password_chars)
     password_chars += random.choices(pool, k=remaining_length)
     random.shuffle(password_chars)
