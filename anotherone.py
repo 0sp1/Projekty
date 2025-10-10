@@ -1,13 +1,18 @@
 import random
 import string
 
-def generate_password(length=12, use_digits=True, use_special=True):
+def generate_password(length=12, use_digits=True, use_special=True, exclude_ambiguous=False):
     if length < 4:
         return "Error: Password must be at least 4 characters."
 
     letters = string.ascii_letters
     digits = string.digits if use_digits else ""
     special = "!@#$%^&*()-_=+[]{};:,.<>?/" if use_special else ""
+
+    ambiguous_chars = "Il1O0o"
+    if exclude_ambiguous:
+        letters = ''.join(c for c in letters if c not in ambiguous_chars)
+        digits = ''.join(c for c in digits if c not in ambiguous_chars)
 
     pool = letters + digits + special
     if not pool:
@@ -52,8 +57,9 @@ def main():
 
         use_digits = input("Include digits? (y/n): ").strip().lower() == "y"
         use_special = input("Include special characters? (y/n): ").strip().lower() == "y"
+        exclude_ambiguous = input("Exclude ambiguous characters (l, I, 1, O, 0)? (y/n): ").strip().lower() == "y"
 
-        pwd = generate_password(length, use_digits, use_special)
+        pwd = generate_password(length, use_digits, use_special, exclude_ambiguous)
         print(f"\nGenerated Password: {pwd}")
         print(f"Password Strength: {password_strength(pwd)}\n")
 
