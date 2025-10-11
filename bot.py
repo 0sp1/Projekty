@@ -32,11 +32,9 @@ async def play(ctx, url):
         channel = ctx.author.voice.channel
         voice_client = await channel.connect()
 
-    # Stop current playing audio if any
     if voice_client.is_playing():
         voice_client.stop()
 
-    # Download audio
     await ctx.send("Downloading audio...")
     ydl_opts = {
         'format': 'bestaudio/best',
@@ -58,7 +56,6 @@ async def play(ctx, url):
             print(e)
             return
 
-    # Play audio
     voice_client.play(discord.FFmpegPCMAudio(source=filename), after=lambda e: print(f"Finished playing: {e}"))
     await ctx.send(f"Now playing: {info.get('title', 'Unknown Title')}")
 
@@ -81,11 +78,22 @@ async def resume(ctx):
         await ctx.send("Nothing is paused.")
 
 @bot.command()
+async def stop(ctx):
+    voice_client = ctx.voice_client
+    if voice_client and voice_client.is_playing():
+        voice_client.stop()
+        await ctx.send("Playback stopped.")
+    else:
+        await ctx.send("Nothing is playing.")
+
+    if os.path.exists("song.mp3"):
+        os.remove("song.mp3")
+
+@bot.command()
 async def leave(ctx):
     if ctx.voice_client:
         await ctx.voice_client.disconnect()
         await ctx.send("Left the voice channel.")
-        # Optional: remove the downloaded file
         if os.path.exists("song.mp3"):
             os.remove("song.mp3")
     else:
