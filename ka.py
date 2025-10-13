@@ -49,6 +49,17 @@ class ContactBook:
         else:
             print("Invalid contact number.")
 
+    def update_contact(self, index, name=None, phone=None, email=None):
+        if 0 <= index < len(self.contacts):
+            contact = self.contacts[index]
+            contact['name'] = name or contact['name']
+            contact['phone'] = phone or contact['phone']
+            contact['email'] = email or contact['email']
+            self.save_contacts()
+            print("Contact updated.")
+        else:
+            print("Invalid contact number.")
+
 def main():
     book = ContactBook()
     while True:
@@ -57,7 +68,8 @@ def main():
         print("2. Add contact")
         print("3. Search contact")
         print("4. Delete contact")
-        print("5. Exit")
+        print("5. Update contact")
+        print("6. Exit")
         choice = input("Choose an option: ")
 
         if choice == "1":
@@ -78,6 +90,19 @@ def main():
             except ValueError:
                 print("Enter a valid number.")
         elif choice == "5":
+            book.view_contacts()
+            try:
+                num = int(input("Enter contact number to update: ")) - 1
+                if 0 <= num < len(book.contacts):
+                    name = input("New name (leave blank to keep current): ")
+                    phone = input("New phone (leave blank to keep current): ")
+                    email = input("New email (leave blank to keep current): ")
+                    book.update_contact(num, name or None, phone or None, email or None)
+                else:
+                    print("Invalid contact number.")
+            except ValueError:
+                print("Enter a valid number.")
+        elif choice == "6":
             print("Goodbye!")
             break
         else:
