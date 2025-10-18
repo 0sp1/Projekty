@@ -49,6 +49,18 @@ class Library:
         else:
             print("Book not found.")
 
+    def search_books(self, query):
+        found_books = [
+            book for book in self.books
+            if query.lower() in book.title.lower() or query.lower() in book.author.lower()
+        ]
+        if found_books:
+            print("\nSearch Results:")
+            for book in found_books:
+                print(book)
+        else:
+            print("No books found matching your search.")
+
     def find_book(self, book_id):
         for book in self.books:
             if book.book_id == book_id:
@@ -66,6 +78,7 @@ def main():
         print("3. Checkout a book")
         print("4. Return a book")
         print("5. Exit")
+        print("6. Search for a book")  # New option
 
         choice = input("Enter your choice: ")
 
@@ -94,6 +107,10 @@ def main():
         elif choice == "5":
             print("Exiting Library System. Goodbye!")
             break
+
+        elif choice == "6":
+            query = input("Enter title or author to search: ")
+            library.search_books(query)
 
         else:
             print("Invalid choice. Try again.")
