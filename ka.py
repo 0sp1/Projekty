@@ -22,7 +22,12 @@ class ContactBook:
             json.dump(self.contacts, f, indent=4)
 
     def add_contact(self, name, phone, email):
-        self.contacts.append({"name": name, "phone": phone, "email": email})
+        self.contacts.append({
+            "name": name,
+            "phone": phone,
+            "email": email,
+            "favorite": False
+        })
         self.save_contacts()
         print("Contact added.")
 
@@ -31,7 +36,17 @@ class ContactBook:
             print("No contacts found.")
             return
         for i, c in enumerate(self.contacts, 1):
-            print(f"{i}. {c['name']} - {c['phone']} - {c['email']}")
+            fav = "⭐" if c.get("favorite") else ""
+            print(f"{i}. {c['name']} - {c['phone']} - {c['email']} {fav}")
+
+    def view_favorites(self):
+        favorites = [c for c in self.contacts if c.get("favorite")]
+        if not favorites:
+            print("No favorite contacts found.")
+            return
+        print("\nFavorite Contacts:")
+        for i, c in enumerate(favorites, 1):
+            print(f"{i}. {c['name']} - {c['phone']} - {c['email']} ⭐")
 
     def search_contact(self, name):
         results = [c for c in self.contacts if name.lower() in c["name"].lower()]
@@ -39,7 +54,8 @@ class ContactBook:
             print("No matches found.")
         else:
             for c in results:
-                print(f"{c['name']} - {c['phone']} - {c['email']}")
+                fav = "⭐" if c.get("favorite") else ""
+                print(f"{c['name']} - {c['phone']} - {c['email']} {fav}")
 
     def delete_contact(self, index):
         if 0 <= index < len(self.contacts):
@@ -60,6 +76,16 @@ class ContactBook:
         else:
             print("Invalid contact number.")
 
+    def mark_favorite(self, index):
+        if 0 <= index < len(self.contacts):
+            contact = self.contacts[index]
+            contact["favorite"] = not contact.get("favorite", False)
+            self.save_contacts()
+            status = "added to" if contact["favorite"] else "removed from"
+            print(f"{contact['name']} {status} favorites.")
+        else:
+            print("Invalid contact number.")
+
 def main():
     book = ContactBook()
     while True:
@@ -69,7 +95,9 @@ def main():
         print("3. Search contact")
         print("4. Delete contact")
         print("5. Update contact")
-        print("6. Exit")
+        print("6. Mark/Unmark favorite")
+        print("7. View favorite contacts")
+        print("8. Exit")
         choice = input("Choose an option: ")
 
         if choice == "1":
@@ -103,6 +131,15 @@ def main():
             except ValueError:
                 print("Enter a valid number.")
         elif choice == "6":
+            book.view_contacts()
+            try:
+                num = int(input("Enter contact number to mark/unmark favorite: ")) - 1
+                book.mark_favorite(num)
+            except ValueError:
+                print("Enter a valid number.")
+        elif choice == "7":
+            book.view_favorites()
+        elif choice == "8":
             print("Goodbye!")
             break
         else:
