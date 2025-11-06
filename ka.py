@@ -1,5 +1,7 @@
 import json
 import os
+import csv
+from datetime import datetime
 
 class ContactBook:
     def __init__(self, filename="contacts.json"):
@@ -21,11 +23,12 @@ class ContactBook:
         with open(self.filename, "w") as f:
             json.dump(self.contacts, f, indent=4)
 
-    def add_contact(self, name, phone, email):
+    def add_contact(self, name, phone, email, birthday=None):
         self.contacts.append({
             "name": name,
             "phone": phone,
             "email": email,
+            "birthday": birthday,
             "favorite": False
         })
         self.save_contacts()
@@ -37,7 +40,8 @@ class ContactBook:
             return
         for i, c in enumerate(self.contacts, 1):
             fav = "⭐" if c.get("favorite") else ""
-            print(f"{i}. {c['name']} - {c['phone']} - {c['email']} {fav}")
+            bday = f"🎂 {c['birthday']}" if c.get("birthday") else ""
+            print(f"{i}. {c['name']} - {c['phone']} - {c['email']} {fav} {bday}")
 
     def view_favorites(self):
         favorites = [c for c in self.contacts if c.get("favorite")]
@@ -55,7 +59,8 @@ class ContactBook:
         else:
             for c in results:
                 fav = "⭐" if c.get("favorite") else ""
-                print(f"{c['name']} - {c['phone']} - {c['email']} {fav}")
+                bday = f"🎂 {c['birthday']}" if c.get("birthday") else ""
+                print(f"{c['name']} - {c['phone']} - {c['email']} {fav} {bday}")
 
     def delete_contact(self, index):
         if 0 <= index < len(self.contacts):
@@ -65,12 +70,13 @@ class ContactBook:
         else:
             print("Invalid contact number.")
 
-    def update_contact(self, index, name=None, phone=None, email=None):
+    def update_contact(self, index, name=None, phone=None, email=None, birthday=None):
         if 0 <= index < len(self.contacts):
             contact = self.contacts[index]
             contact['name'] = name or contact['name']
             contact['phone'] = phone or contact['phone']
             contact['email'] = email or contact['email']
+            contact['birthday'] = birthday or contact.get('birthday')
             self.save_contacts()
             print("Contact updated.")
         else:
@@ -86,6 +92,41 @@ class ContactBook:
         else:
             print("Invalid contact number.")
 
+    # ✅ New Feature 1: Export contacts to CSV
+    def export_to_csv(self, csv_filename="contacts.csv"):
+        if not self.contacts:
+            print("No contacts to export.")
+            return
+        with open(csv_filename, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=["name", "phone", "email", "birthday", "favorite"])
+            writer.writeheader()
+            writer.writerows(self.contacts)
+        print(f"Contacts exported to '{csv_filename}' successfully.")
+
+    # ✅ New Feature 1: Import contacts from CSV
+    def import_from_csv(self, csv_filename="contacts.csv"):
+        if not os.path.exists(csv_filename):
+            print("CSV file not found.")
+            return
+        with open(csv_filename, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                row["favorite"] = row.get("favorite", "False") in ["True", "true", "1"]
+                self.contacts.append(row)
+        self.save_contacts()
+        print(f"Contacts imported from '{csv_filename}' successfully.")
+
+    # ✅ New Feature 2: Birthday reminders
+    def birthday_reminders(self):
+        today = datetime.today().strftime("%m-%d")
+        birthdays_today = [c for c in self.contacts if c.get("birthday") and c["birthday"][5:] == today]
+        if not birthdays_today:
+            print("No birthdays today.")
+        else:
+            print("🎉 Today's Birthdays:")
+            for c in birthdays_today:
+                print(f"🎂 {c['name']} - {c['birthday']}")
+
 def main():
     book = ContactBook()
     while True:
@@ -97,7 +138,10 @@ def main():
         print("5. Update contact")
         print("6. Mark/Unmark favorite")
         print("7. View favorite contacts")
-        print("8. Exit")
+        print("8. Export to CSV")
+        print("9. Import from CSV")
+        print("10. Birthday reminders")
+        print("11. Exit")
         choice = input("Choose an option: ")
 
         if choice == "1":
@@ -106,7 +150,8 @@ def main():
             name = input("Name: ")
             phone = input("Phone: ")
             email = input("Email: ")
-            book.add_contact(name, phone, email)
+            birthday = input("Birthday (YYYY-MM-DD, optional): ").strip() or None
+            book.add_contact(name, phone, email, birthday)
         elif choice == "3":
             query = input("Enter name to search: ")
             book.search_contact(query)
@@ -125,7 +170,8 @@ def main():
                     name = input("New name (leave blank to keep current): ")
                     phone = input("New phone (leave blank to keep current): ")
                     email = input("New email (leave blank to keep current): ")
-                    book.update_contact(num, name or None, phone or None, email or None)
+                    birthday = input("New birthday (YYYY-MM-DD, leave blank to keep current): ").strip() or None
+                    book.update_contact(num, name or None, phone or None, email or None, birthday)
                 else:
                     print("Invalid contact number.")
             except ValueError:
@@ -140,6 +186,14 @@ def main():
         elif choice == "7":
             book.view_favorites()
         elif choice == "8":
+            filename = input("Enter CSV filename (default: contacts.csv): ").strip() or "contacts.csv"
+            book.export_to_csv(filename)
+        elif choice == "9":
+            filename = input("Enter CSV filename to import (default: contacts.csv): ").strip() or "contacts.csv"
+            book.import_from_csv(filename)
+        elif choice == "10":
+            book.birthday_reminders()
+        elif choice == "11":
             print("Goodbye!")
             break
         else:
