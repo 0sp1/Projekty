@@ -3,8 +3,24 @@ import time
 
 tasks = []
 
+FILE_NAME = "tasks.txt"
+
+def load_tasks():
+    """Load tasks from file if it exists."""
+    if os.path.exists(FILE_NAME):
+        with open(FILE_NAME, "r") as f:
+            for line in f:
+                task, done = line.strip().split("|")
+                tasks.append((task, done == "True"))
+
+def save_tasks():
+    """Save tasks to file."""
+    with open(FILE_NAME, "w") as f:
+        for task, done in tasks:
+            f.write(f"{task}|{done}\n")
+
 def show_menu():
-    print("\n📋 To-Do List Manager")
+    print("\nTo-Do List Manager")
     print("1. View tasks")
     print("2. Add task")
     print("3. Remove task")
@@ -13,29 +29,31 @@ def show_menu():
 
 def view_tasks():
     if not tasks:
-        print("No tasks yet! 🎉")
+        print("No tasks yet!")
         return
     print("\nYour Tasks:")
     for i, (task, done) in enumerate(tasks, 1):
-        status = "✅" if done else "❌"
+        status = "Done" if done else "Not Done"
         print(f"{i}. {task} [{status}]")
 
 def add_task():
     task = input("Enter new task: ").strip()
     if task:
         tasks.append((task, False))
+        save_tasks()
         print("Task added!")
     else:
-        print("⚠️ Task cannot be empty.")
+        print("Task cannot be empty.")
 
 def remove_task():
     view_tasks()
     try:
         num = int(input("Enter task number to remove: "))
         tasks.pop(num - 1)
+        save_tasks()
         print("Task removed!")
     except (ValueError, IndexError):
-        print("⚠️ Invalid choice.")
+        print("Invalid choice.")
 
 def mark_done():
     view_tasks()
@@ -43,11 +61,13 @@ def mark_done():
         num = int(input("Enter task number to mark done: "))
         task, _ = tasks[num - 1]
         tasks[num - 1] = (task, True)
-        print("Task marked as done! ✅")
+        save_tasks()
+        print("Task marked as done!")
     except (ValueError, IndexError):
-        print("⚠️ Invalid choice.")
+        print("Invalid choice.")
 
 def main():
+    load_tasks()
     while True:
         show_menu()
         choice = input("Choose an option: ").strip()
@@ -60,10 +80,10 @@ def main():
         elif choice == "4":
             mark_done()
         elif choice == "5":
-            print("👋 Goodbye! Stay productive.")
+            print("Goodbye! Stay productive.")
             break
         else:
-            print("⚠️ Invalid option, try again.")
+            print("Invalid option, try again.")
         time.sleep(1)
 
 if __name__ == "__main__":
