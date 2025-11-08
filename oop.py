@@ -25,7 +25,8 @@ def show_menu():
     print("2. Add task")
     print("3. Remove task")
     print("4. Mark task as done")
-    print("5. Exit")
+    print("5. Edit task")  # 👈 New option
+    print("6. Exit")
 
 def view_tasks():
     if not tasks:
@@ -66,6 +67,22 @@ def mark_done():
     except (ValueError, IndexError):
         print("Invalid choice.")
 
+def edit_task():
+    """Edit the description of an existing task."""
+    view_tasks()
+    try:
+        num = int(input("Enter task number to edit: "))
+        task, done = tasks[num - 1]
+        new_task = input(f"Enter new description for '{task}': ").strip()
+        if new_task:
+            tasks[num - 1] = (new_task, done)
+            save_tasks()
+            print("Task updated!")
+        else:
+            print("Task cannot be empty.")
+    except (ValueError, IndexError):
+        print("Invalid choice.")
+
 def main():
     load_tasks()
     while True:
@@ -80,6 +97,8 @@ def main():
         elif choice == "4":
             mark_done()
         elif choice == "5":
+            edit_task()
+        elif choice == "6":
             print("Goodbye! Stay productive.")
             break
         else:
