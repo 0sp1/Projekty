@@ -1,109 +1,108 @@
+import json
 import os
-import time
+from datetime import datetime
 
-tasks = []
+DATA_FILE = "tasks.json"
 
-FILE_NAME = "tasks.txt"
+class Task:
+    def __init__(self, title, completed=False, created_at=None):
+        self.title = title
+        self.completed = completed
+        self.created_at = created_at or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-def load_tasks():
-    """Load tasks from file if it exists."""
-    if os.path.exists(FILE_NAME):
-        with open(FILE_NAME, "r") as f:
-            for line in f:
-                task, done = line.strip().split("|")
-                tasks.append((task, done == "True"))
+    def to_dict(self):
+        return {
+            "title": self.title,
+            "completed": self.completed,
+            "created_at": self.created_at
+        }
 
-def save_tasks():
-    """Save tasks to file."""
-    with open(FILE_NAME, "w") as f:
-        for task, done in tasks:
-            f.write(f"{task}|{done}\n")
+class ToDoList:
+    def __init__(self, filename=DATA_FILE):
+        self.filename = filename
+        self.tasks = self.load_tasks()
 
-def show_menu():
-    print("\nTo-Do List Manager")
-    print("1. View tasks")
-    print("2. Add task")
-    print("3. Remove task")
-    print("4. Mark task as done")
-    print("5. Edit task")  # 👈 New option
-    print("6. Exit")
+    def load_tasks(self):
+        if not os.path.exists(self.filename):
+            return []
+        with open(self.filename, "r") as file:
+            try:
+                data = json.load(file)
+                return [Task(**task) for task in data]
+            except json.JSONDecodeError:
+                return []
 
-def view_tasks():
-    if not tasks:
-        print("No tasks yet!")
-        return
-    print("\nYour Tasks:")
-    for i, (task, done) in enumerate(tasks, 1):
-        status = "Done" if done else "Not Done"
-        print(f"{i}. {task} [{status}]")
+    def save_tasks(self):
+        with open(self.filename, "w") as file:
+            json.dump([t.to_dict() for t in self.tasks], file, indent=4)
 
-def add_task():
-    task = input("Enter new task: ").strip()
-    if task:
-        tasks.append((task, False))
-        save_tasks()
-        print("Task added!")
-    else:
-        print("Task cannot be empty.")
+    def add_task(self, title):
+        self.tasks.append(Task(title))
+        self.save_tasks()
+        print(f"Added task: '{title}'")
 
-def remove_task():
-    view_tasks()
-    try:
-        num = int(input("Enter task number to remove: "))
-        tasks.pop(num - 1)
-        save_tasks()
-        print("Task removed!")
-    except (ValueError, IndexError):
-        print("Invalid choice.")
+    def list_tasks(self):
+        if not self.tasks:
+            print("No tasks found.")
+            return
+        print("\nYour Tasks:")
+        for i, task in enumerate(self.tasks, start=1):
+            status = "Done" if task.completed else "Pending"
+            print(f"{i}. [{status}] {task.title} (created {task.created_at})")
 
-def mark_done():
-    view_tasks()
-    try:
-        num = int(input("Enter task number to mark done: "))
-        task, _ = tasks[num - 1]
-        tasks[num - 1] = (task, True)
-        save_tasks()
-        print("Task marked as done!")
-    except (ValueError, IndexError):
-        print("Invalid choice.")
+    def complete_task(self, index):
+        try:
+            task = self.tasks[index - 1]
+            task.completed = True
+            self.save_tasks()
+            print(f"Task '{task.title}' marked as complete.")
+        except IndexError:
+            print("Invalid task number.")
 
-def edit_task():
-    """Edit the description of an existing task."""
-    view_tasks()
-    try:
-        num = int(input("Enter task number to edit: "))
-        task, done = tasks[num - 1]
-        new_task = input(f"Enter new description for '{task}': ").strip()
-        if new_task:
-            tasks[num - 1] = (new_task, done)
-            save_tasks()
-            print("Task updated!")
-        else:
-            print("Task cannot be empty.")
-    except (ValueError, IndexError):
-        print("Invalid choice.")
+    def delete_task(self, index):
+        try:
+            task = self.tasks.pop(index - 1)
+            self.save_tasks()
+            print(f"Deleted task '{task.title}'")
+        except IndexError:
+            print("Invalid task number.")
 
 def main():
-    load_tasks()
+    todo = ToDoList()
     while True:
-        show_menu()
-        choice = input("Choose an option: ").strip()
+        print("\n--- TO-DO LIST ---")
+        print("1. View tasks")
+        print("2. Add task")
+        print("3. Complete task")
+        print("4. Delete task")
+        print("5. Quit")
+        choice = input("Choose an option (1-5): ")
+
         if choice == "1":
-            view_tasks()
+            todo.list_tasks()
         elif choice == "2":
-            add_task()
+            title = input("Enter task title: ").strip()
+            if title:
+                todo.add_task(title)
         elif choice == "3":
-            remove_task()
+            todo.list_tasks()
+            try:
+                num = int(input("Enter task number to complete: "))
+                todo.complete_task(num)
+            except ValueError:
+                print("Please enter a valid number.")
         elif choice == "4":
-            mark_done()
+            todo.list_tasks()
+            try:
+                num = int(input("Enter task number to delete: "))
+                todo.delete_task(num)
+            except ValueError:
+                print("Please enter a valid number.")
         elif choice == "5":
-            edit_task()
-        elif choice == "6":
-            print("Goodbye! Stay productive.")
+            print("Goodbye!")
             break
         else:
-            print("Invalid option, try again.")
-        time.sleep(1)
+            print("Invalid option, please try again.")
 
 if __name__ == "__main__":
     main()
