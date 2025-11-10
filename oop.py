@@ -5,16 +5,18 @@ from datetime import datetime
 DATA_FILE = "tasks.json"
 
 class Task:
-    def __init__(self, title, completed=False, created_at=None):
+    def __init__(self, title, completed=False, created_at=None, due_date=None):
         self.title = title
         self.completed = completed
         self.created_at = created_at or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.due_date = due_date  # new field
 
     def to_dict(self):
         return {
             "title": self.title,
             "completed": self.completed,
-            "created_at": self.created_at
+            "created_at": self.created_at,
+            "due_date": self.due_date
         }
 
 class ToDoList:
@@ -36,10 +38,10 @@ class ToDoList:
         with open(self.filename, "w") as file:
             json.dump([t.to_dict() for t in self.tasks], file, indent=4)
 
-    def add_task(self, title):
-        self.tasks.append(Task(title))
+    def add_task(self, title, due_date=None):
+        self.tasks.append(Task(title, due_date=due_date))
         self.save_tasks()
-        print(f"Added task: '{title}'")
+        print(f"Added task: '{title}' (due {due_date if due_date else 'no due date'})")
 
     def list_tasks(self):
         if not self.tasks:
@@ -48,7 +50,8 @@ class ToDoList:
         print("\nYour Tasks:")
         for i, task in enumerate(self.tasks, start=1):
             status = "Done" if task.completed else "Pending"
-            print(f"{i}. [{status}] {task.title} (created {task.created_at})")
+            due = f" | Due: {task.due_date}" if task.due_date else ""
+            print(f"{i}. [{status}] {task.title}{due} (created {task.created_at})")
 
     def complete_task(self, index):
         try:
@@ -83,7 +86,10 @@ def main():
         elif choice == "2":
             title = input("Enter task title: ").strip()
             if title:
-                todo.add_task(title)
+                due = input("Enter due date (YYYY-MM-DD) or leave blank: ").strip()
+                if due == "":
+                    due = None
+                todo.add_task(title, due)
         elif choice == "3":
             todo.list_tasks()
             try:
