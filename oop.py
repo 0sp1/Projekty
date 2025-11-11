@@ -9,7 +9,7 @@ class Task:
         self.title = title
         self.completed = completed
         self.created_at = created_at or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.due_date = due_date  # new field
+        self.due_date = due_date
 
     def to_dict(self):
         return {
@@ -70,6 +70,26 @@ class ToDoList:
         except IndexError:
             print("Invalid task number.")
 
+    # 🆕 New feature: Show overdue tasks
+    def list_overdue_tasks(self):
+        today = datetime.now().date()
+        overdue = []
+        for t in self.tasks:
+            if t.due_date and not t.completed:
+                try:
+                    due = datetime.strptime(t.due_date, "%Y-%m-%d").date()
+                    if due < today:
+                        overdue.append(t)
+                except ValueError:
+                    pass  # Ignore invalid date formats
+
+        if not overdue:
+            print("No overdue tasks! 🎉")
+        else:
+            print("\n⚠️ Overdue Tasks:")
+            for i, task in enumerate(overdue, start=1):
+                print(f"{i}. {task.title} (Due {task.due_date})")
+
 def main():
     todo = ToDoList()
     while True:
@@ -78,8 +98,9 @@ def main():
         print("2. Add task")
         print("3. Complete task")
         print("4. Delete task")
-        print("5. Quit")
-        choice = input("Choose an option (1-5): ")
+        print("5. View overdue tasks")  # <--- new menu option
+        print("6. Quit")
+        choice = input("Choose an option (1-6): ")
 
         if choice == "1":
             todo.list_tasks()
@@ -105,6 +126,8 @@ def main():
             except ValueError:
                 print("Please enter a valid number.")
         elif choice == "5":
+            todo.list_overdue_tasks()
+        elif choice == "6":
             print("Goodbye!")
             break
         else:
