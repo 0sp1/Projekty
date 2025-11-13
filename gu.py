@@ -5,21 +5,21 @@ import os
 class GuessingGame:
     def __init__(self, score_file="score.json"):
         self.score_file = score_file
-        self.best_score = {}
-        self.load_score()
+        self.scores = {}
+        self.player_name = ""
+        self.load_scores()
 
-    def load_score(self):
+    def load_scores(self):
         if os.path.exists(self.score_file):
             with open(self.score_file, "r") as f:
                 try:
-                    data = json.load(f)
-                    self.best_score = data.get("best_score", {})
+                    self.scores = json.load(f)
                 except json.JSONDecodeError:
-                    self.best_score = {}
+                    self.scores = {}
 
-    def save_score(self):
+    def save_scores(self):
         with open(self.score_file, "w") as f:
-            json.dump({"best_score": self.best_score}, f, indent=4)
+            json.dump(self.scores, f, indent=4)
 
     def choose_difficulty(self):
         print("\nSelect Difficulty:")
@@ -37,8 +37,32 @@ class GuessingGame:
             else:
                 print("Invalid choice. Please enter 1, 2, or 3.")
 
+    def get_player(self):
+        print("\n=== Welcome to the Number Guessing Game ===")
+        name = input("Enter your player name: ").strip()
+        if not name:
+            name = "Guest"
+        self.player_name = name
+        if name not in self.scores:
+            self.scores[name] = {"best_score": {}}
+        print(f"Hello, {name}! Let's get started.")
+
+    def give_hint(self, number, upper_limit, guess, attempts):
+        # Provide hints at certain attempt thresholds
+        if attempts == 3:
+            print(f"Hint: The number is {'even' if number % 2 == 0 else 'odd'}.")
+        elif attempts == 5:
+            lower_bound = max(1, number - upper_limit // 10)
+            upper_bound = min(upper_limit, number + upper_limit // 10)
+            print(f"Hint: It’s between {lower_bound} and {upper_bound}.")
+        elif attempts == 7:
+            if number > upper_limit / 2:
+                print("Hint: The number is in the upper half of the range.")
+            else:
+                print("Hint: The number is in the lower half of the range.")
+
     def play(self):
-        print("\nWelcome to the Number Guessing Game!")
+        self.get_player()
         difficulty, upper_limit = self.choose_difficulty()
         print(f"\nI'm thinking of a number between 1 and {upper_limit}.")
         number = random.randint(1, upper_limit)
@@ -48,20 +72,25 @@ class GuessingGame:
             try:
                 guess = int(input("Enter your guess: "))
                 attempts += 1
+
                 if guess < number:
                     print("Too low!")
                 elif guess > number:
                     print("Too high!")
                 else:
-                    print(f"✅ Correct! You guessed it in {attempts} attempts.")
-                    best = self.best_score.get(difficulty)
+                    print(f"Correct! You guessed it in {attempts} attempts.")
+                    player_scores = self.scores[self.player_name]["best_score"]
+                    best = player_scores.get(difficulty)
                     if best is None or attempts < best:
-                        self.best_score[difficulty] = attempts
-                        self.save_score()
-                        print(f"🎉 New best score for {difficulty} mode!")
+                        player_scores[difficulty] = attempts
+                        self.save_scores()
+                        print(f"New best score for {difficulty} mode, {self.player_name}!")
                     else:
                         print(f"Best score for {difficulty}: {best} attempts.")
                     break
+
+                self.give_hint(number, upper_limit, guess, attempts)
+
             except ValueError:
                 print("Please enter a valid number.")
 
