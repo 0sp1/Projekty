@@ -11,14 +11,18 @@ first_words = [
     "Surface", "Xbox", "Windows", "Microsoft", "Azure",
     "Power", "Visual", "Cloud", "AI", "Security",
     "Enterprise", "Developer", "Business", "Edge", "Teams",
-    "Dynamics", "Office", "Server", "Data", "Quantum"
+    "Dynamics", "Office", "Server", "Data", "Quantum",
+    "HoloLens", "Copilot", "Fabric", "Graph", "OneDrive",
+    "Intune", "Defender", "Synapse"
 ]
 
 second_words = [
-    "Laptop", "Series X", "11", "Office Suite", "Cloud Services",
+    "Laptop", "SeriesX", "Win11", "Office", "Cloud",
     "Tools", "Games", "Solutions", "Devices", "Support",
     "Analytics", "Platform", "Management", "Center", "Software",
-    "Console", "Apps", "Integrations", "Compute", "Hardware"
+    "Console", "Apps", "Integrations", "Compute", "Hardware",
+    "Security", "Services", "Networking", "Storage", "Automation",
+    "Insights", "Monitoring", "Workspace"
 ]
 
 for i in range(30):
@@ -36,8 +40,7 @@ for i in range(30):
 
     search_box.submit()
 
-    time.sleep(5) 
+    time.sleep(5)
 
 print("Finished 30 searches.")
 driver.quit()
-
