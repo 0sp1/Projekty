@@ -1,8 +1,10 @@
+
 import time
 import random
 from selenium import webdriver
 from selenium.webdriver.edge.service import Service
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException
 
 service = Service("C:/path/to/msedgedriver.exe")
 driver = webdriver.Edge(service=service)
@@ -25,6 +27,14 @@ second_words = [
     "Insights", "Monitoring", "Workspace"
 ]
 
+def find_search_box(max_wait=10):
+    for attempt in range(max_wait):
+        try:
+            return driver.find_element(By.NAME, "q") 
+        except NoSuchElementException:
+            time.sleep(1)
+    return None 
+
 for i in range(30):
     word1 = random.choice(first_words)
     word2 = random.choice(second_words)
@@ -32,12 +42,17 @@ for i in range(30):
     combined_search = f"{word1} {word2}"
     print(f"({i+1}/30) Searching for:", combined_search)
 
-    driver.get("https://www.microsoft.com")
+    driver.get("https://www.bing.com")
     time.sleep(2)
 
-    search_box = driver.find_element(By.NAME, "q")
-    search_box.send_keys(combined_search)
+    search_box = find_search_box()
 
+    if search_box is None:
+        print("❌ Search box not found — skipping this search.")
+        continue
+
+    search_box.clear()
+    search_box.send_keys(combined_search)
     search_box.submit()
 
     time.sleep(5)
