@@ -1,6 +1,7 @@
 import random
 import string
 
+
 def generate_password(
     length=12,
     use_digits=True,
@@ -30,6 +31,7 @@ def generate_password(
     password_chars = []
     password_chars.append(random.choice(string.ascii_lowercase))
     password_chars.append(random.choice(string.ascii_uppercase))
+
     if use_digits:
         password_chars.append(random.choice(string.digits))
     if use_special:
@@ -42,6 +44,7 @@ def generate_password(
         options = pool
         if no_repeats:
             options = ''.join(c for c in pool if c not in used)
+
         if not options:
             return "Error: Not enough characters to complete password."
 
@@ -55,10 +58,14 @@ def generate_password(
 
 def password_strength(pwd):
     strength = 0
-    if any(c.islower() for c in pwd): strength += 1
-    if any(c.isupper() for c in pwd): strength += 1
-    if any(c.isdigit() for c in pwd): strength += 1
-    if any(c in "!@#$%^&*()-_=+[]{};:,.<>?/" for c in pwd): strength += 1
+    if any(c.islower() for c in pwd):
+        strength += 1
+    if any(c.isupper() for c in pwd):
+        strength += 1
+    if any(c.isdigit() for c in pwd):
+        strength += 1
+    if any(c in "!@#$%^&*()-_=+[]{};:,.<>?/" for c in pwd):
+        strength += 1
 
     levels = {1: "Weak", 2: "Moderate", 3: "Strong", 4: "Very Strong"}
     return levels.get(strength, "Very Weak")
@@ -66,6 +73,7 @@ def password_strength(pwd):
 
 def main():
     print("Random Password Generator")
+
     while True:
         try:
             length = int(input("Enter password length (min 4): "))
@@ -78,7 +86,11 @@ def main():
 
         use_digits = input("Include digits? (y/n): ").strip().lower() == "y"
         use_special = input("Include special characters? (y/n): ").strip().lower() == "y"
-        exclude_ambiguous = input("Exclude ambiguous characters (l, I, 1, O, 0)? (y/n): ").strip().lower() == "y"
+        exclude_ambiguous = (
+            input("Exclude ambiguous characters (l, I, 1, O, 0)? (y/n): ")
+            .strip()
+            .lower() == "y"
+        )
         no_repeats = input("Disallow repeating characters? (y/n): ").strip().lower() == "y"
 
         pwd = generate_password(
