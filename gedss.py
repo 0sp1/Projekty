@@ -20,7 +20,8 @@ def show_tasks(tasks):
     print("\nYour Tasks:")
     for i, task in enumerate(tasks, 1):
         status = "✓" if task["done"] else "✗"
-        print(f"{i}. [{status}] {task['title']}")
+        due = f"(Due: {task['due']})" if task.get("due") else ""
+        print(f"{i}. [{status}] {task['title']} {due}")
     print()
 
 def add_task(tasks):
@@ -28,7 +29,15 @@ def add_task(tasks):
     if not title:
         print("Task name cannot be empty.")
         return
-    tasks.append({"title": title, "done": False})
+    
+    due_date = input("Enter due date (optional): ").strip()
+    due_date = due_date if due_date else None
+
+    tasks.append({
+        "title": title,
+        "done": False,
+        "due": due_date
+    })
     save_tasks(tasks)
     print("Task added successfully!")
 
@@ -52,6 +61,20 @@ def delete_task(tasks):
     except (ValueError, IndexError):
         print("Invalid task number.")
 
+def edit_task(tasks):
+    show_tasks(tasks)
+    try:
+        idx = int(input("Enter task number to edit: ")) - 1
+        new_title = input("Enter new task name: ").strip()
+        if not new_title:
+            print("Task name cannot be empty.")
+            return
+        tasks[idx]["title"] = new_title
+        save_tasks(tasks)
+        print("Task updated successfully!")
+    except (ValueError, IndexError):
+        print("Invalid task number.")
+
 def main():
     tasks = load_tasks()
     while True:
@@ -60,7 +83,8 @@ def main():
         print("2. Add task")
         print("3. Complete task")
         print("4. Delete task")
-        print("5. Exit")
+        print("5. Edit task")      # NEW FEATURE
+        print("6. Exit")
         choice = input("Choose an option: ").strip()
 
         if choice == "1":
@@ -72,6 +96,8 @@ def main():
         elif choice == "4":
             delete_task(tasks)
         elif choice == "5":
+            edit_task(tasks)
+        elif choice == "6":
             print("Goodbye!")
             break
         else:
