@@ -3,10 +3,30 @@ from discord.ext import commands
 import yt_dlp
 import asyncio
 import os
+import uuid
 
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+queues = {}
+
+async def play_next(ctx):
+    guild_id = ctx.guild.id
+    voice_client = ctx.voice_client
+
+    if guild_id not in queues or len(queues[guild_id]) == 0:
+        return
+
+    title, filename = queues[guild_id].pop(0)
+
+    def after_play(err):
+        if err:
+            print("Error:", err)
+        asyncio.run_coroutine_threadsafe(play_next(ctx), bot.loop)
+
+    voice_client.play(discord.FFmpegPCMAudio(filename), after=after_play)
+    asyncio.run_coroutine_threadsafe(ctx.send(f"Now playing: **{title}**"), bot.loop)
 
 @bot.event
 async def on_ready():
@@ -23,22 +43,24 @@ async def join(ctx):
 
 @bot.command()
 async def play(ctx, url):
+    guild_id = ctx.guild.id
+
     if not ctx.author.voice:
         await ctx.send("Join a voice channel first.")
         return
 
     voice_client = ctx.voice_client
     if not voice_client:
-        channel = ctx.author.voice.channel
-        voice_client = await channel.connect()
-
-    if voice_client.is_playing():
-        voice_client.stop()
+        voice_client = await ctx.author.voice.channel.connect()
 
     await ctx.send("Downloading audio...")
+
+    unique_id = str(uuid.uuid4())[:8]
+    output_name = f"song_{unique_id}.%(ext)s"
+
     ydl_opts = {
         'format': 'bestaudio/best',
-        'outtmpl': 'song.%(ext)s',
+        'outtmpl': output_name,
         'quiet': True,
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
@@ -47,17 +69,35 @@ async def play(ctx, url):
         }],
     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        try:
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            filename = ydl.prepare_filename(info).replace('.webm', '.mp3').replace('.m4a', '.mp3')
-        except Exception as e:
-            await ctx.send("Error downloading audio.")
-            print(e)
-            return
+            real_name = ydl.prepare_filename(info)
+            filename = real_name.replace('.webm', '.mp3').replace('.m4a', '.mp3')
+            title = info.get("title", "Unknown Title")
+    except Exception as e:
+        await ctx.send("Error downloading audio.")
+        print(e)
+        return
 
-    voice_client.play(discord.FFmpegPCMAudio(source=filename), after=lambda e: print(f"Finished playing: {e}"))
-    await ctx.send(f"Now playing: {info.get('title', 'Unknown Title')}")
+    if guild_id not in queues:
+        queues[guild_id] = []
+
+    queues[guild_id].append((title, filename))
+
+    await ctx.send(f"Added to queue: **{title}**")
+
+    if not voice_client.is_playing() and len(queues[guild_id]) == 1:
+        await play_next(ctx)
+
+@bot.command()
+async def skip(ctx):
+    voice_client = ctx.voice_client
+    if voice_client and voice_client.is_playing():
+        voice_client.stop()
+        await ctx.send("⏭ Skipped!")
+    else:
+        await ctx.send("Nothing is playing.")
 
 @bot.command()
 async def pause(ctx):
@@ -79,22 +119,19 @@ async def resume(ctx):
 
 @bot.command()
 async def stop(ctx):
+    guild_id = ctx.guild.id
+    queues[guild_id] = []
+
     voice_client = ctx.voice_client
     if voice_client and voice_client.is_playing():
         voice_client.stop()
-        await ctx.send("Playback stopped.")
-    else:
-        await ctx.send("Nothing is playing.")
 
-    if os.path.exists("song.mp3"):
-        os.remove("song.mp3")
+    await ctx.send("Stopped and cleared queue.")
 
 @bot.command()
 async def leave(ctx):
     if ctx.voice_client:
         await ctx.voice_client.disconnect()
         await ctx.send("Left the voice channel.")
-        if os.path.exists("song.mp3"):
-            os.remove("song.mp3")
     else:
         await ctx.send("I'm not in a voice channel.")
