@@ -135,3 +135,45 @@ async def leave(ctx):
         await ctx.send("Left the voice channel.")
     else:
         await ctx.send("I'm not in a voice channel.")
+
+@bot.command()
+async def queue(ctx):
+    guild_id = ctx.guild.id
+
+    if guild_id not in queues or len(queues[guild_id]) == 0:
+        await ctx.send("The queue is empty.")
+        return
+
+    message = "**Current Queue:**\n"
+    for i, (title, _) in enumerate(queues[guild_id], start=1):
+        message += f"`{i}.` {title}\n"
+
+    await ctx.send(message)
+
+@bot.command()
+async def remove(ctx, index: int):
+    guild_id = ctx.guild.id
+
+    if guild_id not in queues or len(queues[guild_id]) == 0:
+        await ctx.send("The queue is empty.")
+        return
+
+    if index < 1 or index > len(queues[guild_id]):
+        await ctx.send("Invalid index.")
+        return
+
+    title, _ = queues[guild_id].pop(index - 1)
+    await ctx.send(f"Removed **{title}** from the queue.")
+
+@bot.command()
+async def clear(ctx):
+    guild_id = ctx.guild.id
+
+    if guild_id not in queues or len(queues[guild_id]) == 0:
+        queues[guild_id] = []
+        await ctx.send("Queue is already empty.")
+        return
+
+    queues[guild_id] = []
+    await ctx.send("Queue cleared.")
+
