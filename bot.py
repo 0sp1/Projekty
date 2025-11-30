@@ -10,6 +10,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 queues = {}
+loop_mode = {}
 
 async def play_next(ctx):
     guild_id = ctx.guild.id
@@ -18,7 +19,10 @@ async def play_next(ctx):
     if guild_id not in queues or len(queues[guild_id]) == 0:
         return
 
-    title, filename = queues[guild_id].pop(0)
+    if loop_mode.get(guild_id, False):
+        title, filename = queues[guild_id][0]
+    else:
+        title, filename = queues[guild_id].pop(0)
 
     def after_play(err):
         if err:
@@ -84,7 +88,6 @@ async def play(ctx, url):
         queues[guild_id] = []
 
     queues[guild_id].append((title, filename))
-
     await ctx.send(f"Added to queue: **{title}**")
 
     if not voice_client.is_playing() and len(queues[guild_id]) == 1:
@@ -121,11 +124,9 @@ async def resume(ctx):
 async def stop(ctx):
     guild_id = ctx.guild.id
     queues[guild_id] = []
-
     voice_client = ctx.voice_client
     if voice_client and voice_client.is_playing():
         voice_client.stop()
-
     await ctx.send("Stopped and cleared queue.")
 
 @bot.command()
@@ -139,7 +140,6 @@ async def leave(ctx):
 @bot.command()
 async def queue(ctx):
     guild_id = ctx.guild.id
-
     if guild_id not in queues or len(queues[guild_id]) == 0:
         await ctx.send("The queue is empty.")
         return
@@ -147,17 +147,14 @@ async def queue(ctx):
     message = "**Current Queue:**\n"
     for i, (title, _) in enumerate(queues[guild_id], start=1):
         message += f"`{i}.` {title}\n"
-
     await ctx.send(message)
 
 @bot.command()
 async def remove(ctx, index: int):
     guild_id = ctx.guild.id
-
     if guild_id not in queues or len(queues[guild_id]) == 0:
         await ctx.send("The queue is empty.")
         return
-
     if index < 1 or index > len(queues[guild_id]):
         await ctx.send("Invalid index.")
         return
@@ -168,12 +165,20 @@ async def remove(ctx, index: int):
 @bot.command()
 async def clear(ctx):
     guild_id = ctx.guild.id
-
     if guild_id not in queues or len(queues[guild_id]) == 0:
         queues[guild_id] = []
         await ctx.send("Queue is already empty.")
         return
-
     queues[guild_id] = []
     await ctx.send("Queue cleared.")
 
+@bot.command()
+async def loop(ctx):
+    guild_id = ctx.guild.id
+    current = loop_mode.get(guild_id, False)
+    loop_mode[guild_id] = not current
+
+    if loop_mode[guild_id]:
+        await ctx.send("Loop mode enabled.")
+    else:
+        await ctx.send("Loop mode disabled.")
