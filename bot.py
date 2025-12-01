@@ -30,20 +30,38 @@ async def play_next(ctx):
         asyncio.run_coroutine_threadsafe(play_next(ctx), bot.loop)
 
     voice_client.play(discord.FFmpegPCMAudio(filename), after=after_play)
-    asyncio.run_coroutine_threadsafe(ctx.send(f"Now playing: **{title}**"), bot.loop)
+    asyncio.run_coroutine_threadsafe(ctx.send(f"Now playing: {title}"), bot.loop)
 
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user}")
 
 @bot.command()
+async def help(ctx):
+    message = (
+        "Available Commands:\n"
+        "!join - Join your voice channel\n"
+        "!leave - Leave the voice channel\n"
+        "!play <url> - Download and play audio\n"
+        "!queue - Show the current queue\n"
+        "!skip - Skip the current song\n"
+        "!pause - Pause playback\n"
+        "!resume - Resume playback\n"
+        "!stop - Stop playback and clear queue\n"
+        "!remove <index> - Remove a song from the queue\n"
+        "!clear - Clear the queue\n"
+        "!loop - Toggle loop mode\n"
+    )
+    await ctx.send(message)
+
+@bot.command()
 async def join(ctx):
     if ctx.author.voice:
         channel = ctx.author.voice.channel
         await channel.connect()
-        await ctx.send(f"Joined `{channel}`!")
+        await ctx.send(f"Joined {channel}.")
     else:
-        await ctx.send("You're not in a voice channel.")
+        await ctx.send("You are not in a voice channel.")
 
 @bot.command()
 async def play(ctx, url):
@@ -88,7 +106,7 @@ async def play(ctx, url):
         queues[guild_id] = []
 
     queues[guild_id].append((title, filename))
-    await ctx.send(f"Added to queue: **{title}**")
+    await ctx.send(f"Added to queue: {title}")
 
     if not voice_client.is_playing() and len(queues[guild_id]) == 1:
         await play_next(ctx)
@@ -98,7 +116,7 @@ async def skip(ctx):
     voice_client = ctx.voice_client
     if voice_client and voice_client.is_playing():
         voice_client.stop()
-        await ctx.send("⏭ Skipped!")
+        await ctx.send("Skipped.")
     else:
         await ctx.send("Nothing is playing.")
 
@@ -107,7 +125,7 @@ async def pause(ctx):
     voice_client = ctx.voice_client
     if voice_client and voice_client.is_playing():
         voice_client.pause()
-        await ctx.send("Playback paused.")
+        await ctx.send("Paused.")
     else:
         await ctx.send("Nothing is playing.")
 
@@ -116,7 +134,7 @@ async def resume(ctx):
     voice_client = ctx.voice_client
     if voice_client and voice_client.is_paused():
         voice_client.resume()
-        await ctx.send("Resuming playback.")
+        await ctx.send("Resumed.")
     else:
         await ctx.send("Nothing is paused.")
 
@@ -127,7 +145,7 @@ async def stop(ctx):
     voice_client = ctx.voice_client
     if voice_client and voice_client.is_playing():
         voice_client.stop()
-    await ctx.send("Stopped and cleared queue.")
+    await ctx.send("Stopped and cleared the queue.")
 
 @bot.command()
 async def leave(ctx):
@@ -135,7 +153,7 @@ async def leave(ctx):
         await ctx.voice_client.disconnect()
         await ctx.send("Left the voice channel.")
     else:
-        await ctx.send("I'm not in a voice channel.")
+        await ctx.send("I am not in a voice channel.")
 
 @bot.command()
 async def queue(ctx):
@@ -144,9 +162,9 @@ async def queue(ctx):
         await ctx.send("The queue is empty.")
         return
 
-    message = "**Current Queue:**\n"
+    message = "Current Queue:\n"
     for i, (title, _) in enumerate(queues[guild_id], start=1):
-        message += f"`{i}.` {title}\n"
+        message += f"{i}. {title}\n"
     await ctx.send(message)
 
 @bot.command()
@@ -160,7 +178,7 @@ async def remove(ctx, index: int):
         return
 
     title, _ = queues[guild_id].pop(index - 1)
-    await ctx.send(f"Removed **{title}** from the queue.")
+    await ctx.send(f"Removed {title} from the queue.")
 
 @bot.command()
 async def clear(ctx):
