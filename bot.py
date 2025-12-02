@@ -7,16 +7,23 @@ import uuid
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.voice_states = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 queues = {}
 loop_mode = {}
+
+async def auto_disconnect_check(ctx):
+    voice = ctx.voice_client
+    if voice and voice.channel and len(voice.channel.members) == 1:
+        await voice.disconnect()
 
 async def play_next(ctx):
     guild_id = ctx.guild.id
     voice_client = ctx.voice_client
 
     if guild_id not in queues or len(queues[guild_id]) == 0:
+        await auto_disconnect_check(ctx)
         return
 
     if loop_mode.get(guild_id, False):
@@ -31,6 +38,15 @@ async def play_next(ctx):
 
     voice_client.play(discord.FFmpegPCMAudio(filename), after=after_play)
     asyncio.run_coroutine_threadsafe(ctx.send(f"Now playing: {title}"), bot.loop)
+
+@bot.event
+async def on_voice_state_update(member, before, after):
+    if member.bot:
+        return
+    if before.channel and not after.channel:
+        for vc in bot.voice_clients:
+            if vc.channel == before.channel and len(vc.channel.members) == 1:
+                await vc.disconnect()
 
 @bot.event
 async def on_ready():
