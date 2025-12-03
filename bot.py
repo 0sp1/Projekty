@@ -12,6 +12,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 queues = {}
 loop_mode = {}
+skip_votes = {}
 
 async def auto_disconnect_check(ctx):
     voice = ctx.voice_client
@@ -21,6 +22,7 @@ async def auto_disconnect_check(ctx):
 async def play_next(ctx):
     guild_id = ctx.guild.id
     voice_client = ctx.voice_client
+    skip_votes[guild_id] = set()
 
     if guild_id not in queues or len(queues[guild_id]) == 0:
         await auto_disconnect_check(ctx)
@@ -60,7 +62,7 @@ async def help(ctx):
         "!leave - Leave the voice channel\n"
         "!play <url> - Download and play audio\n"
         "!queue - Show the current queue\n"
-        "!skip - Skip the current song\n"
+        "!skip - Start or vote to skip the current song\n"
         "!pause - Pause playback\n"
         "!resume - Resume playback\n"
         "!stop - Stop playback and clear queue\n"
@@ -129,12 +131,37 @@ async def play(ctx, url):
 
 @bot.command()
 async def skip(ctx):
+    guild_id = ctx.guild.id
     voice_client = ctx.voice_client
-    if voice_client and voice_client.is_playing():
-        voice_client.stop()
-        await ctx.send("Skipped.")
-    else:
+
+    if not voice_client or not voice_client.is_playing():
         await ctx.send("Nothing is playing.")
+        return
+
+    if guild_id not in skip_votes:
+        skip_votes[guild_id] = set()
+
+    user = ctx.author
+    if not user.voice or user.voice.channel != voice_client.channel:
+        await ctx.send("You must be in the voice channel to vote.")
+        return
+
+    non_bot_members = [m for m in voice_client.channel.members if not m.bot]
+    required = max(1, len(non_bot_members) // 2 + 1)
+
+    if user.id in skip_votes[guild_id]:
+        await ctx.send("You have already voted.")
+        return
+
+    skip_votes[guild_id].add(user.id)
+    votes = len(skip_votes[guild_id])
+
+    if votes >= required:
+        skip_votes[guild_id] = set()
+        voice_client.stop()
+        await ctx.send("Skip vote passed. Skipping song.")
+    else:
+        await ctx.send(f"Skip vote added. {votes}/{required} votes.")
 
 @bot.command()
 async def pause(ctx):
@@ -158,6 +185,7 @@ async def resume(ctx):
 async def stop(ctx):
     guild_id = ctx.guild.id
     queues[guild_id] = []
+    skip_votes[guild_id] = set()
     voice_client = ctx.voice_client
     if voice_client and voice_client.is_playing():
         voice_client.stop()
@@ -199,11 +227,8 @@ async def remove(ctx, index: int):
 @bot.command()
 async def clear(ctx):
     guild_id = ctx.guild.id
-    if guild_id not in queues or len(queues[guild_id]) == 0:
-        queues[guild_id] = []
-        await ctx.send("Queue is already empty.")
-        return
     queues[guild_id] = []
+    skip_votes[guild_id] = set()
     await ctx.send("Queue cleared.")
 
 @bot.command()
