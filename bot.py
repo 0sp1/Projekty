@@ -13,6 +13,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 queues = {}
 loop_mode = {}
 skip_votes = {}
+current_song = {}
 
 async def auto_disconnect_check(ctx):
     voice = ctx.voice_client
@@ -25,6 +26,7 @@ async def play_next(ctx):
     skip_votes[guild_id] = set()
 
     if guild_id not in queues or len(queues[guild_id]) == 0:
+        current_song[guild_id] = None
         await auto_disconnect_check(ctx)
         return
 
@@ -32,6 +34,8 @@ async def play_next(ctx):
         title, filename = queues[guild_id][0]
     else:
         title, filename = queues[guild_id].pop(0)
+
+    current_song[guild_id] = title
 
     def after_play(err):
         if err:
@@ -62,13 +66,14 @@ async def help(ctx):
         "!leave - Leave the voice channel\n"
         "!play <url> - Download and play audio\n"
         "!queue - Show the current queue\n"
-        "!skip - Start or vote to skip the current song\n"
+        "!skip - Vote to skip the current song\n"
         "!pause - Pause playback\n"
         "!resume - Resume playback\n"
         "!stop - Stop playback and clear queue\n"
         "!remove <index> - Remove a song from the queue\n"
         "!clear - Clear the queue\n"
         "!loop - Toggle loop mode\n"
+        "!nowplaying - Show the current song\n"
     )
     await ctx.send(message)
 
@@ -186,6 +191,7 @@ async def stop(ctx):
     guild_id = ctx.guild.id
     queues[guild_id] = []
     skip_votes[guild_id] = set()
+    current_song[guild_id] = None
     voice_client = ctx.voice_client
     if voice_client and voice_client.is_playing():
         voice_client.stop()
@@ -229,6 +235,7 @@ async def clear(ctx):
     guild_id = ctx.guild.id
     queues[guild_id] = []
     skip_votes[guild_id] = set()
+    current_song[guild_id] = None
     await ctx.send("Queue cleared.")
 
 @bot.command()
@@ -241,3 +248,12 @@ async def loop(ctx):
         await ctx.send("Loop mode enabled.")
     else:
         await ctx.send("Loop mode disabled.")
+
+@bot.command()
+async def nowplaying(ctx):
+    guild_id = ctx.guild.id
+    title = current_song.get(guild_id)
+    if title:
+        await ctx.send(f"Currently playing: {title}")
+    else:
+        await ctx.send("No song is playing.")
