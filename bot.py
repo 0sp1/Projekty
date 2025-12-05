@@ -14,6 +14,7 @@ queues = {}
 loop_mode = {}
 skip_votes = {}
 current_song = {}
+volumes = {}
 
 async def auto_disconnect_check(ctx):
     voice = ctx.voice_client
@@ -37,12 +38,13 @@ async def play_next(ctx):
 
     current_song[guild_id] = title
 
+    volume = volumes.get(guild_id, 1.0)
+    source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(filename), volume=volume)
+
     def after_play(err):
-        if err:
-            print("Error:", err)
         asyncio.run_coroutine_threadsafe(play_next(ctx), bot.loop)
 
-    voice_client.play(discord.FFmpegPCMAudio(filename), after=after_play)
+    voice_client.play(source, after=after_play)
     asyncio.run_coroutine_threadsafe(ctx.send(f"Now playing: {title}"), bot.loop)
 
 @bot.event
@@ -73,6 +75,7 @@ async def help(ctx):
         "!remove <index> - Remove a song from the queue\n"
         "!clear - Clear the queue\n"
         "!loop - Toggle loop mode\n"
+        "!volume <0-100> - Set playback volume\n"
         "!nowplaying - Show the current song\n"
     )
     await ctx.send(message)
@@ -120,9 +123,8 @@ async def play(ctx, url):
             real_name = ydl.prepare_filename(info)
             filename = real_name.replace('.webm', '.mp3').replace('.m4a', '.mp3')
             title = info.get("title", "Unknown Title")
-    except Exception as e:
+    except Exception:
         await ctx.send("Error downloading audio.")
-        print(e)
         return
 
     if guild_id not in queues:
@@ -248,6 +250,22 @@ async def loop(ctx):
         await ctx.send("Loop mode enabled.")
     else:
         await ctx.send("Loop mode disabled.")
+
+@bot.command()
+async def volume(ctx, amount: int):
+    guild_id = ctx.guild.id
+    if amount < 0 or amount > 100:
+        await ctx.send("Volume must be between 0 and 100.")
+        return
+
+    volume_value = amount / 100
+    volumes[guild_id] = volume_value
+
+    voice_client = ctx.voice_client
+    if voice_client and voice_client.source and isinstance(voice_client.source, discord.PCMVolumeTransformer):
+        voice_client.source.volume = volume_value
+
+    await ctx.send(f"Volume set to {amount}%.")
 
 @bot.command()
 async def nowplaying(ctx):
