@@ -70,6 +70,15 @@ def main():
 
     while True:
         try:
+            count = int(input("How many passwords to generate: "))
+            if count < 1:
+                print("Enter at least 1.")
+                continue
+        except ValueError:
+            print("Please enter a valid number.")
+            continue
+
+        try:
             length = int(input("Enter password length (min 4): "))
             if length < 4:
                 print("Password must be at least 4 characters.")
@@ -90,26 +99,30 @@ def main():
         exclude_ambiguous = input("Exclude ambiguous characters? (y/n): ").strip().lower() == "y"
         no_repeats = input("Disallow repeating characters? (y/n): ").strip().lower() == "y"
 
-        pwd = generate_password(
-            length,
-            min_lower,
-            min_upper,
-            min_digits,
-            min_special,
-            exclude_ambiguous,
-            no_repeats
-        )
+        passwords = []
+        for _ in range(count):
+            pwd = generate_password(
+                length,
+                min_lower,
+                min_upper,
+                min_digits,
+                min_special,
+                exclude_ambiguous,
+                no_repeats
+            )
+            passwords.append(pwd)
 
-        print(f"\nGenerated Password: {pwd}")
-        print(f"Password Strength: {password_strength(pwd)}")
+        print("\nGenerated Passwords:\n")
+        for i, pwd in enumerate(passwords, 1):
+            print(f"{i}: {pwd} | Strength: {password_strength(pwd)}")
 
         try:
-            pyperclip.copy(pwd)
-            print("Password copied to clipboard.")
+            pyperclip.copy("\n".join(passwords))
+            print("\nAll passwords copied to clipboard.")
         except:
-            print("Clipboard copy failed.")
+            print("\nClipboard copy failed.")
 
-        again = input("\nGenerate another? (y/n): ").strip().lower()
+        again = input("\nGenerate another set? (y/n): ").strip().lower()
         if again != "y":
             print("Goodbye.")
             break
