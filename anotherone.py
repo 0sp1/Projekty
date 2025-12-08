@@ -2,6 +2,21 @@ import random
 import string
 import pyperclip
 
+def has_sequence(pwd):
+    for i in range(len(pwd) - 2):
+        a, b, c = pwd[i], pwd[i+1], pwd[i+2]
+        if a.isalpha() and b.isalpha() and c.isalpha():
+            if ord(b) == ord(a) + 1 and ord(c) == ord(b) + 1:
+                return True
+            if ord(b) == ord(a) - 1 and ord(c) == ord(b) - 1:
+                return True
+        if a.isdigit() and b.isdigit() and c.isdigit():
+            if int(b) == int(a) + 1 and int(c) == int(b) + 1:
+                return True
+            if int(b) == int(a) - 1 and int(c) == int(b) - 1:
+                return True
+    return False
+
 def generate_password(
     length,
     min_lower,
@@ -26,30 +41,37 @@ def generate_password(
     if no_repeats and length > len(pool):
         return "Error: Length too large for no-repeat requirement."
 
-    password_chars = []
-    password_chars += random.sample(letters_lower, min_lower)
-    password_chars += random.sample(letters_upper, min_upper)
-    password_chars += random.sample(digits, min_digits)
-    password_chars += random.sample(special, min_special)
+    while True:
+        password_chars = []
+        try:
+            password_chars += random.sample(letters_lower, min_lower)
+            password_chars += random.sample(letters_upper, min_upper)
+            password_chars += random.sample(digits, min_digits)
+            password_chars += random.sample(special, min_special)
+        except ValueError:
+            return "Error: Character pool too small for minimum requirements."
 
-    if len(password_chars) > length:
-        return "Error: Requirements exceed password length."
+        if len(password_chars) > length:
+            return "Error: Requirements exceed password length."
 
-    used = set(password_chars)
-    remaining_length = length - len(password_chars)
+        used = set(password_chars)
+        remaining_length = length - len(password_chars)
 
-    for _ in range(remaining_length):
-        options = pool
-        if no_repeats:
-            options = ''.join(c for c in pool if c not in used)
-        if not options:
-            return "Error: Not enough characters to complete password."
-        ch = random.choice(options)
-        password_chars.append(ch)
-        used.add(ch)
+        for _ in range(remaining_length):
+            options = pool
+            if no_repeats:
+                options = ''.join(c for c in pool if c not in used)
+            if not options:
+                return "Error: Not enough characters to complete password."
+            ch = random.choice(options)
+            password_chars.append(ch)
+            used.add(ch)
 
-    random.shuffle(password_chars)
-    return "".join(password_chars)
+        random.shuffle(password_chars)
+        pwd = "".join(password_chars)
+
+        if not has_sequence(pwd):
+            return pwd
 
 def password_strength(pwd):
     strength = 0
@@ -61,7 +83,6 @@ def password_strength(pwd):
         strength += 1
     if any(c in "!@#$%^&*()-_=+[]{};:,.<>?/" for c in pwd):
         strength += 1
-
     levels = {1: "Weak", 2: "Moderate", 3: "Strong", 4: "Very Strong"}
     return levels.get(strength, "Very Weak")
 
