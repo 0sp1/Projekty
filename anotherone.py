@@ -17,6 +17,12 @@ def has_sequence(pwd):
                 return True
     return False
 
+def has_repeat_sequence(pwd):
+    for i in range(len(pwd) - 1):
+        if pwd[i] == pwd[i+1]:
+            return True
+    return False
+
 def generate_password(
     length,
     min_lower,
@@ -24,7 +30,8 @@ def generate_password(
     min_digits,
     min_special,
     exclude_ambiguous=False,
-    no_repeats=False
+    no_repeats=False,
+    avoid_repeat_sequences=False
 ):
     letters_lower = string.ascii_lowercase
     letters_upper = string.ascii_uppercase
@@ -70,6 +77,8 @@ def generate_password(
         random.shuffle(password_chars)
         pwd = "".join(password_chars)
 
+        if avoid_repeat_sequences and has_repeat_sequence(pwd):
+            continue
         if not has_sequence(pwd):
             return pwd
 
@@ -119,6 +128,7 @@ def main():
 
         exclude_ambiguous = input("Exclude ambiguous characters? (y/n): ").strip().lower() == "y"
         no_repeats = input("Disallow repeating characters? (y/n): ").strip().lower() == "y"
+        avoid_repeat_sequences = input("Avoid sequences like aa or 11? (y/n): ").strip().lower() == "y"
 
         passwords = []
         for _ in range(count):
@@ -129,7 +139,8 @@ def main():
                 min_digits,
                 min_special,
                 exclude_ambiguous,
-                no_repeats
+                no_repeats,
+                avoid_repeat_sequences
             )
             passwords.append(pwd)
 
