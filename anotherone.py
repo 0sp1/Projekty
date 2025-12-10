@@ -23,6 +23,13 @@ def has_repeat_sequence(pwd):
             return True
     return False
 
+def filter_chars(chars, allowed_only, blocked):
+    if allowed_only:
+        chars = ''.join(c for c in chars if c in allowed_only)
+    if blocked:
+        chars = ''.join(c for c in chars if c not in blocked)
+    return chars
+
 def generate_password(
     length,
     min_lower,
@@ -31,30 +38,44 @@ def generate_password(
     min_special,
     exclude_ambiguous=False,
     no_repeats=False,
-    avoid_repeat_sequences=False
+    avoid_repeat_sequences=False,
+    allowed_only=None,
+    blocked=None
 ):
     letters_lower = string.ascii_lowercase
     letters_upper = string.ascii_uppercase
     digits = string.digits
     special = "!@#$%^&*()-_=+[]{};:,.<>?/"
 
-    ambiguous_chars = "Il1O0o"
     if exclude_ambiguous:
-        letters_lower = ''.join(c for c in letters_lower if c not in ambiguous_chars)
-        letters_upper = ''.join(c for c in letters_upper if c not in ambiguous_chars)
-        digits = ''.join(c for c in digits if c not in ambiguous_chars)
+        ambiguous = "Il1O0o"
+        letters_lower = ''.join(c for c in letters_lower if c not in ambiguous)
+        letters_upper = ''.join(c for c in letters_upper if c not in ambiguous)
+        digits = ''.join(c for c in digits if c not in ambiguous)
+
+    letters_lower = filter_chars(letters_lower, allowed_only, blocked)
+    letters_upper = filter_chars(letters_upper, allowed_only, blocked)
+    digits = filter_chars(digits, allowed_only, blocked)
+    special = filter_chars(special, allowed_only, blocked)
 
     pool = letters_lower + letters_upper + digits + special
+    if not pool:
+        return "Error: Character pool empty after filters."
+
     if no_repeats and length > len(pool):
         return "Error: Length too large for no-repeat requirement."
 
     while True:
-        password_chars = []
         try:
-            password_chars += random.sample(letters_lower, min_lower)
-            password_chars += random.sample(letters_upper, min_upper)
-            password_chars += random.sample(digits, min_digits)
-            password_chars += random.sample(special, min_special)
+            password_chars = []
+            if min_lower > 0:
+                password_chars += random.sample(letters_lower, min_lower)
+            if min_upper > 0:
+                password_chars += random.sample(letters_upper, min_upper)
+            if min_digits > 0:
+                password_chars += random.sample(digits, min_digits)
+            if min_special > 0:
+                password_chars += random.sample(special, min_special)
         except ValueError:
             return "Error: Character pool too small for minimum requirements."
 
@@ -70,9 +91,9 @@ def generate_password(
                 options = ''.join(c for c in pool if c not in used)
             if not options:
                 return "Error: Not enough characters to complete password."
-            ch = random.choice(options)
-            password_chars.append(ch)
-            used.add(ch)
+            c = random.choice(options)
+            password_chars.append(c)
+            used.add(c)
 
         random.shuffle(password_chars)
         pwd = "".join(password_chars)
@@ -83,17 +104,17 @@ def generate_password(
             return pwd
 
 def password_strength(pwd):
-    strength = 0
+    s = 0
     if any(c.islower() for c in pwd):
-        strength += 1
+        s += 1
     if any(c.isupper() for c in pwd):
-        strength += 1
+        s += 1
     if any(c.isdigit() for c in pwd):
-        strength += 1
+        s += 1
     if any(c in "!@#$%^&*()-_=+[]{};:,.<>?/" for c in pwd):
-        strength += 1
+        s += 1
     levels = {1: "Weak", 2: "Moderate", 3: "Strong", 4: "Very Strong"}
-    return levels.get(strength, "Very Weak")
+    return levels.get(s, "Very Weak")
 
 def main():
     print("Random Password Generator")
@@ -130,6 +151,12 @@ def main():
         no_repeats = input("Disallow repeating characters? (y/n): ").strip().lower() == "y"
         avoid_repeat_sequences = input("Avoid sequences like aa or 11? (y/n): ").strip().lower() == "y"
 
+        blocked_input = input("Block specific characters (leave empty for none): ").strip()
+        blocked = set(blocked_input) if blocked_input else None
+
+        allowed_input = input("Use only these characters (leave empty for none): ").strip()
+        allowed_only = set(allowed_input) if allowed_input else None
+
         passwords = []
         for _ in range(count):
             pwd = generate_password(
@@ -140,7 +167,9 @@ def main():
                 min_special,
                 exclude_ambiguous,
                 no_repeats,
-                avoid_repeat_sequences
+                avoid_repeat_sequences,
+                allowed_only,
+                blocked
             )
             passwords.append(pwd)
 
@@ -161,3 +190,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
