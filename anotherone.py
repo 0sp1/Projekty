@@ -1,5 +1,6 @@
 import random
 import string
+import math
 import pyperclip
 
 def has_sequence(pwd):
@@ -29,6 +30,11 @@ def filter_chars(chars, allowed_only, blocked):
     if blocked:
         chars = ''.join(c for c in chars if c not in blocked)
     return chars
+
+def password_entropy(pwd, pool_size):
+    if pool_size <= 1:
+        return 0
+    return round(len(pwd) * math.log2(pool_size), 2)
 
 def generate_password(
     length,
@@ -60,10 +66,10 @@ def generate_password(
 
     pool = letters_lower + letters_upper + digits + special
     if not pool:
-        return "Error: Character pool empty after filters."
+        return "Error: Character pool empty after filters.", 0
 
     if no_repeats and length > len(pool):
-        return "Error: Length too large for no-repeat requirement."
+        return "Error: Length too large for no-repeat requirement.", 0
 
     while True:
         try:
@@ -77,10 +83,10 @@ def generate_password(
             if min_special > 0:
                 password_chars += random.sample(special, min_special)
         except ValueError:
-            return "Error: Character pool too small for minimum requirements."
+            return "Error: Character pool too small for minimum requirements.", 0
 
         if len(password_chars) > length:
-            return "Error: Requirements exceed password length."
+            return "Error: Requirements exceed password length.", 0
 
         used = set(password_chars)
         remaining_length = length - len(password_chars)
@@ -90,7 +96,7 @@ def generate_password(
             if no_repeats:
                 options = ''.join(c for c in pool if c not in used)
             if not options:
-                return "Error: Not enough characters to complete password."
+                return "Error: Not enough characters to complete password.", 0
             c = random.choice(options)
             password_chars.append(c)
             used.add(c)
@@ -101,7 +107,7 @@ def generate_password(
         if avoid_repeat_sequences and has_repeat_sequence(pwd):
             continue
         if not has_sequence(pwd):
-            return pwd
+            return pwd, len(pool)
 
 def password_strength(pwd):
     s = 0
@@ -159,7 +165,7 @@ def main():
 
         passwords = []
         for _ in range(count):
-            pwd = generate_password(
+            pwd, pool_size = generate_password(
                 length,
                 min_lower,
                 min_upper,
@@ -171,14 +177,15 @@ def main():
                 allowed_only,
                 blocked
             )
-            passwords.append(pwd)
+            entropy = password_entropy(pwd, pool_size)
+            passwords.append((pwd, entropy))
 
         print("\nGenerated Passwords:\n")
-        for i, pwd in enumerate(passwords, 1):
-            print(f"{i}: {pwd} | Strength: {password_strength(pwd)}")
+        for i, (pwd, entropy) in enumerate(passwords, 1):
+            print(f"{i}: {pwd} | Strength: {password_strength(pwd)} | Entropy: {entropy} bits")
 
         try:
-            pyperclip.copy("\n".join(passwords))
+            pyperclip.copy("\n".join(p for p, e in passwords))
             print("\nAll passwords copied to clipboard.")
         except:
             print("\nClipboard copy failed.")
@@ -190,4 +197,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
