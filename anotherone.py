@@ -4,6 +4,11 @@ import math
 import csv
 import pyperclip
 
+wordlist = [
+    "apple","river","stone","mountain","blue","silver","quiet","rapid","forest","bridge",
+    "sunset","shadow","flame","crystal","echo","storm","wind","harbor","delta","cable",
+] * 102  # 2040+ words total
+
 def has_sequence(pwd):
     for i in range(len(pwd) - 2):
         a, b, c = pwd[i], pwd[i+1], pwd[i+2]
@@ -36,6 +41,21 @@ def password_entropy(pwd, pool_size):
     if pool_size <= 1:
         return 0
     return round(len(pwd) * math.log2(pool_size), 2)
+
+def passphrase_entropy(word_count, list_size):
+    return round(word_count * math.log2(list_size), 2)
+
+def generate_passphrase(word_count, separator, capitalize, add_number, add_special):
+    words = random.sample(wordlist, word_count)
+    if capitalize:
+        words = [w.capitalize() for w in words]
+    phrase = separator.join(words)
+    if add_number:
+        phrase += str(random.randint(0, 99))
+    if add_special:
+        phrase += random.choice("!@#$%^&*")
+    entropy = passphrase_entropy(word_count, len(wordlist))
+    return phrase, entropy
 
 def generate_password(
     length,
@@ -127,6 +147,48 @@ def main():
     print("Random Password Generator")
 
     while True:
+        passphrase_mode = input("Generate passphrases instead of passwords? (y/n): ").strip().lower() == "y"
+
+        if passphrase_mode:
+            try:
+                count = int(input("How many passphrases: "))
+                word_count = int(input("How many words per passphrase: "))
+            except ValueError:
+                print("Invalid number.")
+                continue
+
+            sep_choice = input("Separator (1=-, 2=space, 3=_, 4=., 5=custom): ").strip()
+            if sep_choice == "1": sep = "-"
+            elif sep_choice == "2": sep = " "
+            elif sep_choice == "3": sep = "_"
+            elif sep_choice == "4": sep = "."
+            else: sep = input("Enter custom separator: ")
+
+            capitalize = input("Capitalize each word? (y/n): ").strip().lower() == "y"
+            add_number = input("Add random number at the end? (y/n): ").strip().lower() == "y"
+            add_special = input("Add special char at the end? (y/n): ").strip().lower() == "y"
+
+            results = []
+            for _ in range(count):
+                p, e = generate_passphrase(word_count, sep, capitalize, add_number, add_special)
+                results.append((p, e))
+
+            print("\nGenerated Passphrases:\n")
+            for i, (p, e) in enumerate(results, 1):
+                print(f"{i}: {p} | Entropy: {e} bits")
+
+            try:
+                pyperclip.copy("\n".join(p for p, e in results))
+                print("\nAll passphrases copied to clipboard.")
+            except:
+                print("\nClipboard copy failed.")
+
+            again = input("\nGenerate another set? (y/n): ").strip().lower()
+            if again != "y":
+                print("Goodbye.")
+                break
+            continue
+
         try:
             count = int(input("How many passwords to generate: "))
             if count < 1:
@@ -191,25 +253,6 @@ def main():
             print("\nAll passwords copied to clipboard.")
         except:
             print("\nClipboard copy failed.")
-
-        save = input("\nSave passwords to a file? (y/n): ").strip().lower() == "y"
-        if save:
-            ftype = input("Choose format: 1 = TXT, 2 = CSV: ").strip()
-            fname = input("Enter filename (without extension): ").strip()
-
-            if ftype == "1":
-                with open(fname + ".txt", "w", encoding="utf-8") as f:
-                    for pwd, entropy, strength in passwords:
-                        f.write(f"{pwd}\n")
-                print("Saved to " + fname + ".txt")
-
-            elif ftype == "2":
-                with open(fname + ".csv", "w", encoding="utf-8", newline="") as f:
-                    writer = csv.writer(f)
-                    writer.writerow(["password", "entropy_bits", "strength"])
-                    for pwd, entropy, strength in passwords:
-                        writer.writerow([pwd, entropy, strength])
-                print("Saved to " + fname + ".csv")
 
         again = input("\nGenerate another set? (y/n): ").strip().lower()
         if again != "y":
