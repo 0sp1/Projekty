@@ -1,6 +1,7 @@
 import random
 import string
 import math
+import csv
 import pyperclip
 
 def has_sequence(pwd):
@@ -178,17 +179,37 @@ def main():
                 blocked
             )
             entropy = password_entropy(pwd, pool_size)
-            passwords.append((pwd, entropy))
+            strength = password_strength(pwd)
+            passwords.append((pwd, entropy, strength))
 
         print("\nGenerated Passwords:\n")
-        for i, (pwd, entropy) in enumerate(passwords, 1):
-            print(f"{i}: {pwd} | Strength: {password_strength(pwd)} | Entropy: {entropy} bits")
+        for i, (pwd, entropy, strength) in enumerate(passwords, 1):
+            print(f"{i}: {pwd} | Strength: {strength} | Entropy: {entropy} bits")
 
         try:
-            pyperclip.copy("\n".join(p for p, e in passwords))
+            pyperclip.copy("\n".join(p for p, e, s in passwords))
             print("\nAll passwords copied to clipboard.")
         except:
             print("\nClipboard copy failed.")
+
+        save = input("\nSave passwords to a file? (y/n): ").strip().lower() == "y"
+        if save:
+            ftype = input("Choose format: 1 = TXT, 2 = CSV: ").strip()
+            fname = input("Enter filename (without extension): ").strip()
+
+            if ftype == "1":
+                with open(fname + ".txt", "w", encoding="utf-8") as f:
+                    for pwd, entropy, strength in passwords:
+                        f.write(f"{pwd}\n")
+                print("Saved to " + fname + ".txt")
+
+            elif ftype == "2":
+                with open(fname + ".csv", "w", encoding="utf-8", newline="") as f:
+                    writer = csv.writer(f)
+                    writer.writerow(["password", "entropy_bits", "strength"])
+                    for pwd, entropy, strength in passwords:
+                        writer.writerow([pwd, entropy, strength])
+                print("Saved to " + fname + ".csv")
 
         again = input("\nGenerate another set? (y/n): ").strip().lower()
         if again != "y":
