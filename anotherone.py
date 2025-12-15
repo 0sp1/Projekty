@@ -3,6 +3,12 @@ import string
 import math
 import pyperclip
 
+DICTIONARY = {
+    "password","admin","user","login","welcome","qwerty","abc","test",
+    "letmein","monkey","dragon","football","baseball","master","shadow",
+    "sun","moon","star","love","secret","hello","world"
+}
+
 def has_sequence(pwd):
     for i in range(len(pwd) - 2):
         a, b, c = pwd[i], pwd[i+1], pwd[i+2]
@@ -24,6 +30,13 @@ def has_repeat_sequence(pwd):
             return True
     return False
 
+def has_dictionary_word(pwd):
+    p = pwd.lower()
+    for word in DICTIONARY:
+        if len(word) >= 3 and word in p:
+            return True
+    return False
+
 def filter_chars(chars, allowed_only, blocked):
     if allowed_only:
         chars = ''.join(c for c in chars if c in allowed_only)
@@ -37,37 +50,22 @@ def password_entropy(pwd, pool_size):
     return len(pwd) * math.log2(pool_size)
 
 def strength_score(pwd, entropy):
-    score = 0
-
-    score += min(len(pwd) * 4, 40)
-
-    if any(c.islower() for c in pwd):
-        score += 10
-    if any(c.isupper() for c in pwd):
-        score += 10
-    if any(c.isdigit() for c in pwd):
-        score += 10
-    if any(c in "!@#$%^&*()-_=+[]{};:,.<>?/" for c in pwd):
-        score += 10
-
+    score = min(len(pwd) * 4, 40)
+    if any(c.islower() for c in pwd): score += 10
+    if any(c.isupper() for c in pwd): score += 10
+    if any(c.isdigit() for c in pwd): score += 10
+    if any(c in "!@#$%^&*()-_=+[]{};:,.<>?/" for c in pwd): score += 10
     score += min(entropy / 2, 20)
-
-    if has_sequence(pwd):
-        score -= 15
-    if has_repeat_sequence(pwd):
-        score -= 10
-
+    if has_sequence(pwd): score -= 15
+    if has_repeat_sequence(pwd): score -= 10
+    if has_dictionary_word(pwd): score -= 20
     return max(0, min(100, int(score)))
 
-def password_strength_label(score):
-    if score < 25:
-        return "Very Weak"
-    if score < 50:
-        return "Weak"
-    if score < 70:
-        return "Moderate"
-    if score < 85:
-        return "Strong"
+def strength_label(score):
+    if score < 25: return "Very Weak"
+    if score < 50: return "Weak"
+    if score < 70: return "Moderate"
+    if score < 85: return "Strong"
     return "Very Strong"
 
 def generate_password(
@@ -81,34 +79,27 @@ def generate_password(
     avoid_repeat_sequences=False,
     allowed_only=None,
     blocked=None,
-    required_chars=None
+    required_chars=None,
+    no_dictionary=False
 ):
-    letters_lower = string.ascii_lowercase
-    letters_upper = string.ascii_uppercase
+    lower = string.ascii_lowercase
+    upper = string.ascii_uppercase
     digits = string.digits
     special = "!@#$%^&*()-_=+[]{};:,.<>?/"
 
     if exclude_ambiguous:
-        ambiguous = "Il1O0o"
-        letters_lower = ''.join(c for c in letters_lower if c not in ambiguous)
-        letters_upper = ''.join(c for c in letters_upper if c not in ambiguous)
-        digits = ''.join(c for c in digits if c not in ambiguous)
+        amb = "Il1O0o"
+        lower = ''.join(c for c in lower if c not in amb)
+        upper = ''.join(c for c in upper if c not in amb)
+        digits = ''.join(c for c in digits if c not in amb)
 
-    letters_lower = filter_chars(letters_lower, allowed_only, blocked)
-    letters_upper = filter_chars(letters_upper, allowed_only, blocked)
+    lower = filter_chars(lower, allowed_only, blocked)
+    upper = filter_chars(upper, allowed_only, blocked)
     digits = filter_chars(digits, allowed_only, blocked)
     special = filter_chars(special, allowed_only, blocked)
 
-    pool = letters_lower + letters_upper + digits + special
+    pool = lower + upper + digits + special
     if not pool:
-        return "Error", 0
-
-    if required_chars:
-        for c in required_chars:
-            if c not in pool:
-                return "Error", 0
-
-    if no_repeats and length > len(pool):
         return "Error", 0
 
     while True:
@@ -116,8 +107,8 @@ def generate_password(
             chars = []
             if required_chars:
                 chars += list(required_chars)
-            chars += random.sample(letters_lower, min_lower)
-            chars += random.sample(letters_upper, min_upper)
+            chars += random.sample(lower, min_lower)
+            chars += random.sample(upper, min_upper)
             chars += random.sample(digits, min_digits)
             chars += random.sample(special, min_special)
         except ValueError:
@@ -128,10 +119,10 @@ def generate_password(
 
         used = set(chars)
         for _ in range(length - len(chars)):
-            options = pool if not no_repeats else ''.join(c for c in pool if c not in used)
-            if not options:
+            opts = pool if not no_repeats else ''.join(c for c in pool if c not in used)
+            if not opts:
                 return "Error", 0
-            c = random.choice(options)
+            c = random.choice(opts)
             chars.append(c)
             used.add(c)
 
@@ -140,8 +131,12 @@ def generate_password(
 
         if avoid_repeat_sequences and has_repeat_sequence(pwd):
             continue
-        if not has_sequence(pwd):
-            return pwd, len(pool)
+        if has_sequence(pwd):
+            continue
+        if no_dictionary and has_dictionary_word(pwd):
+            continue
+
+        return pwd, len(pool)
 
 def main():
     print("Random Password Generator")
@@ -155,16 +150,21 @@ def main():
             min_digits = int(input("Minimum digits: "))
             min_special = int(input("Minimum special: "))
         except ValueError:
-            print("Invalid input.")
             continue
 
         exclude_ambiguous = input("Exclude ambiguous? (y/n): ").lower() == "y"
         no_repeats = input("No repeats? (y/n): ").lower() == "y"
-        avoid_repeat_sequences = input("Avoid sequences? (y/n): ").lower() == "y"
+        avoid_seq = input("Avoid sequences? (y/n): ").lower() == "y"
+        no_dict = input("No dictionary words? (y/n): ").lower() == "y"
 
-        blocked = set(input("Block characters (optional): ")) or None
-        allowed_only = set(input("Allow only characters (optional): ")) or None
-        required = set(input("Must contain characters (optional): ")) or None
+        blocked = input("Block characters (optional): ").strip()
+        blocked = set(blocked) if blocked else None
+
+        allowed = input("Allow only characters (optional): ").strip()
+        allowed = set(allowed) if allowed else None
+
+        required = input("Must contain characters (optional): ").strip()
+        required = set(required) if required else None
 
         results = []
         for _ in range(count):
@@ -176,26 +176,25 @@ def main():
                 min_special,
                 exclude_ambiguous,
                 no_repeats,
-                avoid_repeat_sequences,
-                allowed_only,
+                avoid_seq,
+                allowed,
                 blocked,
-                required
+                required,
+                no_dict
             )
             entropy = password_entropy(pwd, pool)
             score = strength_score(pwd, entropy)
-            label = password_strength_label(score)
-            results.append((pwd, score, label))
+            results.append((pwd, score, strength_label(score)))
 
-        print("\nGenerated Passwords:\n")
         for i, (p, s, l) in enumerate(results, 1):
-            print(f"{i}: {p} | Score: {s}/100 | {l}")
+            print(f"{i}: {p} | {s}/100 | {l}")
 
         try:
             pyperclip.copy("\n".join(p for p, _, _ in results))
         except:
             pass
 
-        if input("\nGenerate again? (y/n): ").lower() != "y":
+        if input("Generate again? (y/n): ").lower() != "y":
             break
 
 if __name__ == "__main__":
