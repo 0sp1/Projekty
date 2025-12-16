@@ -32,8 +32,8 @@ def has_repeat_sequence(pwd):
 
 def has_dictionary_word(pwd):
     p = pwd.lower()
-    for word in DICTIONARY:
-        if len(word) >= 3 and word in p:
+    for w in DICTIONARY:
+        if len(w) >= 3 and w in p:
             return True
     return False
 
@@ -67,6 +67,22 @@ def strength_label(score):
     if score < 70: return "Moderate"
     if score < 85: return "Strong"
     return "Very Strong"
+
+def crack_time(entropy, guesses_per_sec):
+    seconds = (2 ** entropy) / guesses_per_sec
+    units = [
+        ("seconds", 60),
+        ("minutes", 60),
+        ("hours", 24),
+        ("days", 365),
+        ("years", 1000),
+        ("millennia", None)
+    ]
+    value = seconds
+    for name, div in units:
+        if div is None or value < div:
+            return f"{int(value)} {name}"
+        value /= div
 
 def generate_password(
     length,
@@ -184,13 +200,15 @@ def main():
             )
             entropy = password_entropy(pwd, pool)
             score = strength_score(pwd, entropy)
-            results.append((pwd, score, strength_label(score)))
+            online = crack_time(entropy, 1_000)
+            offline = crack_time(entropy, 10_000_000_000)
+            results.append((pwd, score, strength_label(score), online, offline))
 
-        for i, (p, s, l) in enumerate(results, 1):
-            print(f"{i}: {p} | {s}/100 | {l}")
+        for i, (p, s, l, o, f) in enumerate(results, 1):
+            print(f"{i}: {p} | {s}/100 | {l} | Online: {o} | Offline: {f}")
 
         try:
-            pyperclip.copy("\n".join(p for p, _, _ in results))
+            pyperclip.copy("\n".join(p for p, _, _, _, _ in results))
         except:
             pass
 
