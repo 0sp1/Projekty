@@ -2,8 +2,6 @@ import discord
 from discord.ext import commands
 import yt_dlp
 import asyncio
-import os
-import uuid
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -26,7 +24,7 @@ async def play_next(ctx):
     voice_client = ctx.voice_client
     skip_votes[guild_id] = set()
 
-    if guild_id not in queues or len(queues[guild_id]) == 0:
+    if guild_id not in queues or not queues[guild_id]:
         current_song[guild_id] = None
         await auto_disconnect_check(ctx)
         return
@@ -37,11 +35,10 @@ async def play_next(ctx):
         title, filename = queues[guild_id].pop(0)
 
     current_song[guild_id] = title
-
     volume = volumes.get(guild_id, 1.0)
     source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(filename), volume=volume)
 
-    def after_play(err):
+    def after_play(error):
         asyncio.run_coroutine_threadsafe(play_next(ctx), bot.loop)
 
     voice_client.play(source, after=after_play)
@@ -62,30 +59,27 @@ async def on_ready():
 
 @bot.command()
 async def help(ctx):
-    message = (
-        "Available Commands:\n"
-        "!join - Join your voice channel\n"
-        "!leave - Leave the voice channel\n"
-        "!play <url> - Download and play audio\n"
-        "!queue - Show the current queue\n"
-        "!skip - Vote to skip the current song\n"
-        "!pause - Pause playback\n"
-        "!resume - Resume playback\n"
-        "!stop - Stop playback and clear queue\n"
-        "!remove <index> - Remove a song from the queue\n"
-        "!clear - Clear the queue\n"
-        "!loop - Toggle loop mode\n"
-        "!volume <0-100> - Set playback volume\n"
-        "!nowplaying - Show the current song\n"
+    await ctx.send(
+        "!join\n"
+        "!leave\n"
+        "!play <url or playlist>\n"
+        "!queue\n"
+        "!skip\n"
+        "!pause\n"
+        "!resume\n"
+        "!stop\n"
+        "!remove <index>\n"
+        "!clear\n"
+        "!loop\n"
+        "!volume <0-100>\n"
+        "!nowplaying"
     )
-    await ctx.send(message)
 
 @bot.command()
 async def join(ctx):
     if ctx.author.voice:
-        channel = ctx.author.voice.channel
-        await channel.connect()
-        await ctx.send(f"Joined {channel}.")
+        await ctx.author.voice.channel.connect()
+        await ctx.send("Joined voice channel.")
     else:
         await ctx.send("You are not in a voice channel.")
 
@@ -103,13 +97,14 @@ async def play(ctx, url):
 
     await ctx.send("Downloading audio...")
 
-    unique_id = str(uuid.uuid4())[:8]
-    output_name = f"song_{unique_id}.%(ext)s"
+    if guild_id not in queues:
+        queues[guild_id] = []
 
     ydl_opts = {
         'format': 'bestaudio/best',
-        'outtmpl': output_name,
         'quiet': True,
+        'ignoreerrors': True,
+        'outtmpl': 'song_%(id)s.%(ext)s',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
@@ -120,20 +115,28 @@ async def play(ctx, url):
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            real_name = ydl.prepare_filename(info)
-            filename = real_name.replace('.webm', '.mp3').replace('.m4a', '.mp3')
-            title = info.get("title", "Unknown Title")
+
+            if 'entries' in info:
+                count = 0
+                for entry in info['entries']:
+                    if not entry:
+                        continue
+                    title = entry.get("title", "Unknown Title")
+                    filename = f"song_{entry['id']}.mp3"
+                    queues[guild_id].append((title, filename))
+                    count += 1
+                await ctx.send(f"Added {count} songs to the queue.")
+            else:
+                title = info.get("title", "Unknown Title")
+                filename = f"song_{info['id']}.mp3"
+                queues[guild_id].append((title, filename))
+                await ctx.send(f"Added to queue: {title}")
+
     except Exception:
         await ctx.send("Error downloading audio.")
         return
 
-    if guild_id not in queues:
-        queues[guild_id] = []
-
-    queues[guild_id].append((title, filename))
-    await ctx.send(f"Added to queue: {title}")
-
-    if not voice_client.is_playing() and len(queues[guild_id]) == 1:
+    if not voice_client.is_playing():
         await play_next(ctx)
 
 @bot.command()
@@ -148,42 +151,38 @@ async def skip(ctx):
     if guild_id not in skip_votes:
         skip_votes[guild_id] = set()
 
-    user = ctx.author
-    if not user.voice or user.voice.channel != voice_client.channel:
-        await ctx.send("You must be in the voice channel to vote.")
+    if not ctx.author.voice or ctx.author.voice.channel != voice_client.channel:
+        await ctx.send("You must be in the voice channel.")
         return
 
-    non_bot_members = [m for m in voice_client.channel.members if not m.bot]
-    required = max(1, len(non_bot_members) // 2 + 1)
+    non_bot = [m for m in voice_client.channel.members if not m.bot]
+    required = max(1, len(non_bot) // 2 + 1)
 
-    if user.id in skip_votes[guild_id]:
-        await ctx.send("You have already voted.")
+    if ctx.author.id in skip_votes[guild_id]:
+        await ctx.send("You already voted.")
         return
 
-    skip_votes[guild_id].add(user.id)
-    votes = len(skip_votes[guild_id])
+    skip_votes[guild_id].add(ctx.author.id)
 
-    if votes >= required:
+    if len(skip_votes[guild_id]) >= required:
         skip_votes[guild_id] = set()
         voice_client.stop()
-        await ctx.send("Skip vote passed. Skipping song.")
+        await ctx.send("Song skipped.")
     else:
-        await ctx.send(f"Skip vote added. {votes}/{required} votes.")
+        await ctx.send(f"Skip votes: {len(skip_votes[guild_id])}/{required}")
 
 @bot.command()
 async def pause(ctx):
-    voice_client = ctx.voice_client
-    if voice_client and voice_client.is_playing():
-        voice_client.pause()
+    if ctx.voice_client and ctx.voice_client.is_playing():
+        ctx.voice_client.pause()
         await ctx.send("Paused.")
     else:
         await ctx.send("Nothing is playing.")
 
 @bot.command()
 async def resume(ctx):
-    voice_client = ctx.voice_client
-    if voice_client and voice_client.is_paused():
-        voice_client.resume()
+    if ctx.voice_client and ctx.voice_client.is_paused():
+        ctx.voice_client.resume()
         await ctx.send("Resumed.")
     else:
         await ctx.send("Nothing is paused.")
@@ -194,43 +193,41 @@ async def stop(ctx):
     queues[guild_id] = []
     skip_votes[guild_id] = set()
     current_song[guild_id] = None
-    voice_client = ctx.voice_client
-    if voice_client and voice_client.is_playing():
-        voice_client.stop()
-    await ctx.send("Stopped and cleared the queue.")
+    if ctx.voice_client:
+        ctx.voice_client.stop()
+    await ctx.send("Stopped and cleared queue.")
 
 @bot.command()
 async def leave(ctx):
     if ctx.voice_client:
         await ctx.voice_client.disconnect()
-        await ctx.send("Left the voice channel.")
+        await ctx.send("Left voice channel.")
     else:
-        await ctx.send("I am not in a voice channel.")
+        await ctx.send("Not connected.")
 
 @bot.command()
 async def queue(ctx):
     guild_id = ctx.guild.id
-    if guild_id not in queues or len(queues[guild_id]) == 0:
-        await ctx.send("The queue is empty.")
+    if guild_id not in queues or not queues[guild_id]:
+        await ctx.send("Queue is empty.")
         return
 
-    message = "Current Queue:\n"
-    for i, (title, _) in enumerate(queues[guild_id], start=1):
-        message += f"{i}. {title}\n"
-    await ctx.send(message)
+    msg = ""
+    for i, (title, _) in enumerate(queues[guild_id], 1):
+        msg += f"{i}. {title}\n"
+    await ctx.send(msg)
 
 @bot.command()
 async def remove(ctx, index: int):
     guild_id = ctx.guild.id
-    if guild_id not in queues or len(queues[guild_id]) == 0:
-        await ctx.send("The queue is empty.")
+    if guild_id not in queues or not queues[guild_id]:
+        await ctx.send("Queue is empty.")
         return
     if index < 1 or index > len(queues[guild_id]):
         await ctx.send("Invalid index.")
         return
-
     title, _ = queues[guild_id].pop(index - 1)
-    await ctx.send(f"Removed {title} from the queue.")
+    await ctx.send(f"Removed {title}")
 
 @bot.command()
 async def clear(ctx):
@@ -243,35 +240,21 @@ async def clear(ctx):
 @bot.command()
 async def loop(ctx):
     guild_id = ctx.guild.id
-    current = loop_mode.get(guild_id, False)
-    loop_mode[guild_id] = not current
-
-    if loop_mode[guild_id]:
-        await ctx.send("Loop mode enabled.")
-    else:
-        await ctx.send("Loop mode disabled.")
+    loop_mode[guild_id] = not loop_mode.get(guild_id, False)
+    await ctx.send("Loop enabled." if loop_mode[guild_id] else "Loop disabled.")
 
 @bot.command()
 async def volume(ctx, amount: int):
-    guild_id = ctx.guild.id
     if amount < 0 or amount > 100:
-        await ctx.send("Volume must be between 0 and 100.")
+        await ctx.send("Volume must be 0-100.")
         return
-
     volume_value = amount / 100
-    volumes[guild_id] = volume_value
-
-    voice_client = ctx.voice_client
-    if voice_client and voice_client.source and isinstance(voice_client.source, discord.PCMVolumeTransformer):
-        voice_client.source.volume = volume_value
-
-    await ctx.send(f"Volume set to {amount}%.")
+    volumes[ctx.guild.id] = volume_value
+    if ctx.voice_client and isinstance(ctx.voice_client.source, discord.PCMVolumeTransformer):
+        ctx.voice_client.source.volume = volume_value
+    await ctx.send(f"Volume set to {amount}%")
 
 @bot.command()
 async def nowplaying(ctx):
-    guild_id = ctx.guild.id
-    title = current_song.get(guild_id)
-    if title:
-        await ctx.send(f"Currently playing: {title}")
-    else:
-        await ctx.send("No song is playing.")
+    title = current_song.get(ctx.guild.id)
+    await ctx.send(f"Currently playing: {title}" if title else "Nothing is playing.")
