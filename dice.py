@@ -23,24 +23,25 @@ class TaskManager:
             json.dump(self.tasks, f, indent=4)
 
     def add_task(self, description, priority, due_date):
-        task = {
+        self.tasks.append({
             "description": description,
             "completed": False,
             "priority": priority,
             "due_date": due_date
-        }
-        self.tasks.append(task)
+        })
         self.save_tasks()
         print("Task added successfully.")
 
-    def view_tasks(self):
-        if not self.tasks:
+    def view_tasks(self, tasks=None):
+        tasks = tasks if tasks is not None else self.tasks
+
+        if not tasks:
             print("No tasks found.")
             return
 
         today = datetime.today().date()
 
-        for i, task in enumerate(self.tasks, 1):
+        for i, task in enumerate(tasks, 1):
             status = "Completed" if task["completed"] else "Pending"
             due = datetime.strptime(task["due_date"], "%Y-%m-%d").date()
             overdue = "OVERDUE" if not task["completed"] and due < today else ""
@@ -75,6 +76,24 @@ class TaskManager:
         else:
             print("Invalid task number.")
 
+    def filter_tasks(self, mode):
+        today = datetime.today().date()
+        filtered = []
+
+        for task in self.tasks:
+            due = datetime.strptime(task["due_date"], "%Y-%m-%d").date()
+
+            if mode == "completed" and task["completed"]:
+                filtered.append(task)
+            elif mode == "pending" and not task["completed"]:
+                filtered.append(task)
+            elif mode == "overdue" and not task["completed"] and due < today:
+                filtered.append(task)
+            elif mode in ("low", "medium", "high") and task["priority"].lower() == mode:
+                filtered.append(task)
+
+        self.view_tasks(filtered)
+
 def main():
     manager = TaskManager()
 
@@ -85,7 +104,8 @@ def main():
         print("3. Complete task")
         print("4. Delete task")
         print("5. Edit task")
-        print("6. Exit")
+        print("6. Filter tasks")
+        print("7. Exit")
 
         choice = input("Choose an option: ")
 
@@ -126,6 +146,30 @@ def main():
                 print("Please enter a valid number.")
 
         elif choice == "6":
+            print("1. Completed")
+            print("2. Pending")
+            print("3. Overdue")
+            print("4. Low priority")
+            print("5. Medium priority")
+            print("6. High priority")
+
+            option = input("Choose filter: ")
+
+            modes = {
+                "1": "completed",
+                "2": "pending",
+                "3": "overdue",
+                "4": "low",
+                "5": "medium",
+                "6": "high"
+            }
+
+            if option in modes:
+                manager.filter_tasks(modes[option])
+            else:
+                print("Invalid filter option.")
+
+        elif choice == "7":
             print("Goodbye!")
             break
 
