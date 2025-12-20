@@ -94,6 +94,14 @@ class TaskManager:
 
         self.view_tasks(filtered)
 
+    def search_tasks(self, keyword):
+        keyword = keyword.lower()
+        results = [
+            task for task in self.tasks
+            if keyword in task["description"].lower()
+        ]
+        self.view_tasks(results)
+
 def main():
     manager = TaskManager()
 
@@ -105,7 +113,8 @@ def main():
         print("4. Delete task")
         print("5. Edit task")
         print("6. Filter tasks")
-        print("7. Exit")
+        print("7. Search tasks")
+        print("8. Exit")
 
         choice = input("Choose an option: ")
 
@@ -170,6 +179,10 @@ def main():
                 print("Invalid filter option.")
 
         elif choice == "7":
+            keyword = input("Enter keyword to search: ")
+            manager.search_tasks(keyword)
+
+        elif choice == "8":
             print("Goodbye!")
             break
 
