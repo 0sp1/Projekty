@@ -102,6 +102,31 @@ class TaskManager:
         ]
         self.view_tasks(results)
 
+    # 🔹 NEW FEATURE: SORT TASKS
+    def sort_tasks(self, mode):
+        if not self.tasks:
+            print("No tasks to sort.")
+            return
+
+        if mode == "date":
+            sorted_tasks = sorted(
+                self.tasks,
+                key=lambda t: datetime.strptime(t["due_date"], "%Y-%m-%d")
+            )
+        elif mode == "priority":
+            priority_order = {"Low": 1, "Medium": 2, "High": 3}
+            sorted_tasks = sorted(
+                self.tasks,
+                key=lambda t: priority_order.get(t["priority"], 0),
+                reverse=True
+            )
+        else:
+            print("Invalid sort option.")
+            return
+
+        self.view_tasks(sorted_tasks)
+
+
 def main():
     manager = TaskManager()
 
@@ -114,7 +139,8 @@ def main():
         print("5. Edit task")
         print("6. Filter tasks")
         print("7. Search tasks")
-        print("8. Exit")
+        print("8. Sort tasks")
+        print("9. Exit")
 
         choice = input("Choose an option: ")
 
@@ -183,11 +209,25 @@ def main():
             manager.search_tasks(keyword)
 
         elif choice == "8":
+            print("1. By due date")
+            print("2. By priority")
+
+            sort_choice = input("Choose sort option: ")
+
+            if sort_choice == "1":
+                manager.sort_tasks("date")
+            elif sort_choice == "2":
+                manager.sort_tasks("priority")
+            else:
+                print("Invalid sort option.")
+
+        elif choice == "9":
             print("Goodbye!")
             break
 
         else:
             print("Invalid option. Try again.")
+
 
 if __name__ == "__main__":
     main()
