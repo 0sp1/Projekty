@@ -102,7 +102,6 @@ class TaskManager:
         ]
         self.view_tasks(results)
 
-    # 🔹 NEW FEATURE: SORT TASKS
     def sort_tasks(self, mode):
         if not self.tasks:
             print("No tasks to sort.")
@@ -126,6 +125,30 @@ class TaskManager:
 
         self.view_tasks(sorted_tasks)
 
+    # ⭐ NEW FEATURE: TASK STATISTICS
+    def task_stats(self):
+        if not self.tasks:
+            print("No tasks available.")
+            return
+
+        today = datetime.today().date()
+        total = len(self.tasks)
+        completed = sum(task["completed"] for task in self.tasks)
+        pending = total - completed
+        overdue = sum(
+            1 for task in self.tasks
+            if not task["completed"] and
+            datetime.strptime(task["due_date"], "%Y-%m-%d").date() < today
+        )
+
+        percent = (completed / total) * 100
+
+        print("\nTask Statistics")
+        print(f"Total tasks     : {total}")
+        print(f"Completed       : {completed}")
+        print(f"Pending         : {pending}")
+        print(f"Overdue         : {overdue}")
+        print(f"Completion rate : {percent:.1f}%")
 
 def main():
     manager = TaskManager()
@@ -140,7 +163,8 @@ def main():
         print("6. Filter tasks")
         print("7. Search tasks")
         print("8. Sort tasks")
-        print("9. Exit")
+        print("9. Task statistics")
+        print("10. Exit")
 
         choice = input("Choose an option: ")
 
@@ -222,12 +246,14 @@ def main():
                 print("Invalid sort option.")
 
         elif choice == "9":
+            manager.task_stats()
+
+        elif choice == "10":
             print("Goodbye!")
             break
 
         else:
             print("Invalid option. Try again.")
-
 
 if __name__ == "__main__":
     main()
