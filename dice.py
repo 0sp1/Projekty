@@ -1,18 +1,22 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class TaskManager:
     def __init__(self, filename="tasks.json"):
         self.filename = filename
         self.tasks = []
         self.load_tasks()
+        self.show_reminders()
 
     def load_tasks(self):
         if os.path.exists(self.filename):
             try:
                 with open(self.filename, "r") as f:
                     self.tasks = json.load(f)
+                    for t in self.tasks:
+                        t.setdefault("tags", [])
+                        t.setdefault("recurring", None)
             except json.JSONDecodeError:
                 self.tasks = []
         else:
@@ -22,238 +26,200 @@ class TaskManager:
         with open(self.filename, "w") as f:
             json.dump(self.tasks, f, indent=4)
 
-    def add_task(self, description, priority, due_date):
+    def show_reminders(self):
+        today = datetime.today().date()
+        found = False
+
+        for t in self.tasks:
+            if t["completed"]:
+                continue
+            due = datetime.strptime(t["due_date"], "%Y-%m-%d").date()
+            if due < today:
+                print(f"OVERDUE: {t['description']} (due {t['due_date']})")
+                found = True
+            elif due == today:
+                print(f"DUE TODAY: {t['description']}")
+                found = True
+
+        if not found:
+            print("No reminders.")
+
+    def add_task(self, desc, priority, due, tags, recurring):
         self.tasks.append({
-            "description": description,
+            "description": desc,
             "completed": False,
             "priority": priority,
-            "due_date": due_date
+            "due_date": due,
+            "tags": tags,
+            "recurring": recurring
         })
         self.save_tasks()
-        print("Task added successfully.")
+        print("Task added.")
 
     def view_tasks(self, tasks=None):
         tasks = tasks if tasks is not None else self.tasks
-
         if not tasks:
-            print("No tasks found.")
+            print("No tasks.")
             return
 
         today = datetime.today().date()
 
-        for i, task in enumerate(tasks, 1):
-            status = "Completed" if task["completed"] else "Pending"
-            due = datetime.strptime(task["due_date"], "%Y-%m-%d").date()
-            overdue = "OVERDUE" if not task["completed"] and due < today else ""
+        for i, t in enumerate(tasks, 1):
+            due = datetime.strptime(t["due_date"], "%Y-%m-%d").date()
+            overdue = "OVERDUE" if not t["completed"] and due < today else ""
+            tags = ", ".join(t["tags"]) if t["tags"] else "None"
+            recur = t["recurring"] if t["recurring"] else "No"
+
             print(
-                f"{i}. {task['description']} "
-                f"[{status}] | Priority: {task['priority']} | Due: {task['due_date']} {overdue}"
+                f"{i}. {t['description']} "
+                f"[{'Done' if t['completed'] else 'Pending'}] | "
+                f"Priority: {t['priority']} | Due: {t['due_date']} | "
+                f"Tags: {tags} | Recurring: {recur} {overdue}"
             )
 
-    def complete_task(self, index):
-        if 0 <= index < len(self.tasks):
-            self.tasks[index]["completed"] = True
+    def complete_task(self, i):
+        if 0 <= i < len(self.tasks):
+            task = self.tasks[i]
+            if task["recurring"]:
+                self.advance_recurring(task)
+                print("Recurring task advanced.")
+            else:
+                task["completed"] = True
+                print("Task completed.")
             self.save_tasks()
-            print("Task marked as completed.")
-        else:
-            print("Invalid task number.")
 
-    def delete_task(self, index):
-        if 0 <= index < len(self.tasks):
-            removed = self.tasks.pop(index)
-            self.save_tasks()
-            print(f"Deleted task: {removed['description']}")
-        else:
-            print("Invalid task number.")
+    def advance_recurring(self, task):
+        due = datetime.strptime(task["due_date"], "%Y-%m-%d")
+        if task["recurring"] == "daily":
+            due += timedelta(days=1)
+        elif task["recurring"] == "weekly":
+            due += timedelta(days=7)
+        elif task["recurring"] == "monthly":
+            due += timedelta(days=30)
+        task["due_date"] = due.strftime("%Y-%m-%d")
 
-    def edit_task(self, index, description, priority, due_date):
-        if 0 <= index < len(self.tasks):
-            self.tasks[index]["description"] = description
-            self.tasks[index]["priority"] = priority
-            self.tasks[index]["due_date"] = due_date
+    def delete_task(self, i):
+        if 0 <= i < len(self.tasks):
+            print(f"Deleted: {self.tasks[i]['description']}")
+            self.tasks.pop(i)
             self.save_tasks()
-            print("Task updated successfully.")
-        else:
-            print("Invalid task number.")
+
+    def search(self, keyword):
+        self.view_tasks([
+            t for t in self.tasks
+            if keyword.lower() in t["description"].lower()
+        ])
 
     def filter_tasks(self, mode):
         today = datetime.today().date()
-        filtered = []
+        out = []
 
-        for task in self.tasks:
-            due = datetime.strptime(task["due_date"], "%Y-%m-%d").date()
+        for t in self.tasks:
+            due = datetime.strptime(t["due_date"], "%Y-%m-%d").date()
+            if mode == "completed" and t["completed"]:
+                out.append(t)
+            elif mode == "pending" and not t["completed"]:
+                out.append(t)
+            elif mode == "overdue" and not t["completed"] and due < today:
+                out.append(t)
+            elif mode in ("low", "medium", "high") and t["priority"].lower() == mode:
+                out.append(t)
 
-            if mode == "completed" and task["completed"]:
-                filtered.append(task)
-            elif mode == "pending" and not task["completed"]:
-                filtered.append(task)
-            elif mode == "overdue" and not task["completed"] and due < today:
-                filtered.append(task)
-            elif mode in ("low", "medium", "high") and task["priority"].lower() == mode:
-                filtered.append(task)
+        self.view_tasks(out)
 
-        self.view_tasks(filtered)
-
-    def search_tasks(self, keyword):
-        keyword = keyword.lower()
-        results = [
-            task for task in self.tasks
-            if keyword in task["description"].lower()
-        ]
-        self.view_tasks(results)
+    def filter_by_tag(self, tag):
+        self.view_tasks([
+            t for t in self.tasks
+            if tag.lower() in [x.lower() for x in t["tags"]]
+        ])
 
     def sort_tasks(self, mode):
-        if not self.tasks:
-            print("No tasks to sort.")
-            return
-
         if mode == "date":
-            sorted_tasks = sorted(
-                self.tasks,
-                key=lambda t: datetime.strptime(t["due_date"], "%Y-%m-%d")
-            )
+            tasks = sorted(self.tasks, key=lambda t: t["due_date"])
         elif mode == "priority":
-            priority_order = {"Low": 1, "Medium": 2, "High": 3}
-            sorted_tasks = sorted(
-                self.tasks,
-                key=lambda t: priority_order.get(t["priority"], 0),
-                reverse=True
-            )
+            order = {"Low": 1, "Medium": 2, "High": 3}
+            tasks = sorted(self.tasks, key=lambda t: order[t["priority"]], reverse=True)
         else:
-            print("Invalid sort option.")
+            print("Invalid sort.")
             return
+        self.view_tasks(tasks)
 
-        self.view_tasks(sorted_tasks)
-
-    # ⭐ NEW FEATURE: TASK STATISTICS
-    def task_stats(self):
-        if not self.tasks:
-            print("No tasks available.")
-            return
-
-        today = datetime.today().date()
+    def stats(self):
         total = len(self.tasks)
-        completed = sum(task["completed"] for task in self.tasks)
-        pending = total - completed
+        completed = sum(t["completed"] for t in self.tasks)
         overdue = sum(
-            1 for task in self.tasks
-            if not task["completed"] and
-            datetime.strptime(task["due_date"], "%Y-%m-%d").date() < today
+            1 for t in self.tasks
+            if not t["completed"] and
+            datetime.strptime(t["due_date"], "%Y-%m-%d").date() < datetime.today().date()
         )
 
-        percent = (completed / total) * 100
-
-        print("\nTask Statistics")
-        print(f"Total tasks     : {total}")
-        print(f"Completed       : {completed}")
-        print(f"Pending         : {pending}")
-        print(f"Overdue         : {overdue}")
-        print(f"Completion rate : {percent:.1f}%")
+        print("Statistics")
+        print(f"Total     : {total}")
+        print(f"Completed : {completed}")
+        print(f"Pending   : {total - completed}")
+        print(f"Overdue   : {overdue}")
+        if total:
+            print(f"Progress  : {(completed / total) * 100:.1f}%")
 
 def main():
-    manager = TaskManager()
+    tm = TaskManager()
 
     while True:
         print("\nTask Manager")
-        print("1. View tasks")
-        print("2. Add task")
-        print("3. Complete task")
-        print("4. Delete task")
-        print("5. Edit task")
-        print("6. Filter tasks")
-        print("7. Search tasks")
-        print("8. Sort tasks")
-        print("9. Task statistics")
+        print("1. View")
+        print("2. Add")
+        print("3. Complete")
+        print("4. Delete")
+        print("5. Search")
+        print("6. Filter")
+        print("7. Filter by tag")
+        print("8. Sort")
+        print("9. Statistics")
         print("10. Exit")
 
-        choice = input("Choose an option: ")
+        c = input("Choose: ")
 
-        if choice == "1":
-            manager.view_tasks()
+        if c == "1":
+            tm.view_tasks()
 
-        elif choice == "2":
-            desc = input("Enter task description: ")
-            priority = input("Priority (Low / Medium / High): ").capitalize()
-            due_date = input("Due date (YYYY-MM-DD): ")
-            manager.add_task(desc, priority, due_date)
+        elif c == "2":
+            d = input("Description: ")
+            p = input("Priority (Low/Medium/High): ").capitalize()
+            due = input("Due (YYYY-MM-DD): ")
+            tags = [t.strip() for t in input("Tags (comma): ").split(",") if t.strip()]
+            r = input("Recurring (daily/weekly/monthly/none): ").lower()
+            r = r if r in ("daily", "weekly", "monthly") else None
+            tm.add_task(d, p, due, tags, r)
 
-        elif choice == "3":
-            manager.view_tasks()
-            try:
-                num = int(input("Enter task number to complete: ")) - 1
-                manager.complete_task(num)
-            except ValueError:
-                print("Please enter a valid number.")
+        elif c == "3":
+            tm.view_tasks()
+            tm.complete_task(int(input("Task #: ")) - 1)
 
-        elif choice == "4":
-            manager.view_tasks()
-            try:
-                num = int(input("Enter task number to delete: ")) - 1
-                manager.delete_task(num)
-            except ValueError:
-                print("Please enter a valid number.")
+        elif c == "4":
+            tm.view_tasks()
+            tm.delete_task(int(input("Task #: ")) - 1)
 
-        elif choice == "5":
-            manager.view_tasks()
-            try:
-                num = int(input("Enter task number to edit: ")) - 1
-                desc = input("New description: ")
-                priority = input("New priority (Low / Medium / High): ").capitalize()
-                due_date = input("New due date (YYYY-MM-DD): ")
-                manager.edit_task(num, desc, priority, due_date)
-            except ValueError:
-                print("Please enter a valid number.")
+        elif c == "5":
+            tm.search(input("Keyword: "))
 
-        elif choice == "6":
-            print("1. Completed")
-            print("2. Pending")
-            print("3. Overdue")
-            print("4. Low priority")
-            print("5. Medium priority")
-            print("6. High priority")
+        elif c == "6":
+            tm.filter_tasks(input("completed / pending / overdue / low / medium / high: "))
 
-            option = input("Choose filter: ")
+        elif c == "7":
+            tm.filter_by_tag(input("Tag: "))
 
-            modes = {
-                "1": "completed",
-                "2": "pending",
-                "3": "overdue",
-                "4": "low",
-                "5": "medium",
-                "6": "high"
-            }
+        elif c == "8":
+            tm.sort_tasks(input("date / priority: "))
 
-            if option in modes:
-                manager.filter_tasks(modes[option])
-            else:
-                print("Invalid filter option.")
+        elif c == "9":
+            tm.stats()
 
-        elif choice == "7":
-            keyword = input("Enter keyword to search: ")
-            manager.search_tasks(keyword)
-
-        elif choice == "8":
-            print("1. By due date")
-            print("2. By priority")
-
-            sort_choice = input("Choose sort option: ")
-
-            if sort_choice == "1":
-                manager.sort_tasks("date")
-            elif sort_choice == "2":
-                manager.sort_tasks("priority")
-            else:
-                print("Invalid sort option.")
-
-        elif choice == "9":
-            manager.task_stats()
-
-        elif choice == "10":
+        elif c == "10":
             print("Goodbye!")
             break
 
         else:
-            print("Invalid option. Try again.")
+            print("Invalid option.")
 
 if __name__ == "__main__":
     main()
