@@ -1,5 +1,6 @@
 import json
 import os
+import csv
 from datetime import datetime, timedelta
 
 class TaskManager:
@@ -161,6 +162,24 @@ class TaskManager:
         if total:
             print(f"Progress  : {(completed / total) * 100:.1f}%")
 
+    def export_to_csv(self, filename="tasks.csv"):
+        with open(filename, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                "Description", "Completed", "Priority",
+                "Due Date", "Tags", "Recurring"
+            ])
+            for t in self.tasks:
+                writer.writerow([
+                    t["description"],
+                    t["completed"],
+                    t["priority"],
+                    t["due_date"],
+                    ", ".join(t["tags"]),
+                    t["recurring"] or ""
+                ])
+        print(f"Tasks exported to {filename}")
+
 def main():
     tm = TaskManager()
 
@@ -175,7 +194,8 @@ def main():
         print("7. Filter by tag")
         print("8. Sort")
         print("9. Statistics")
-        print("10. Exit")
+        print("10. Export to CSV")
+        print("11. Exit")
 
         c = input("Choose: ")
 
@@ -215,6 +235,9 @@ def main():
             tm.stats()
 
         elif c == "10":
+            tm.export_to_csv()
+
+        elif c == "11":
             print("Goodbye!")
             break
 
@@ -223,3 +246,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
