@@ -4,8 +4,9 @@ import csv
 from datetime import datetime, timedelta
 
 class TaskManager:
-    def __init__(self, filename="tasks.json"):
+    def __init__(self, filename="tasks.json", archive_file="archive.json"):
         self.filename = filename
+        self.archive_file = archive_file
         self.tasks = []
         self.load_tasks()
         self.show_reminders()
@@ -26,6 +27,19 @@ class TaskManager:
     def save_tasks(self):
         with open(self.filename, "w") as f:
             json.dump(self.tasks, f, indent=4)
+
+    def load_archive(self):
+        if os.path.exists(self.archive_file):
+            try:
+                with open(self.archive_file, "r") as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                return []
+        return []
+
+    def save_archive(self, archived):
+        with open(self.archive_file, "w") as f:
+            json.dump(archived, f, indent=4)
 
     def show_reminders(self):
         today = datetime.today().date()
@@ -104,6 +118,28 @@ class TaskManager:
             print(f"Deleted: {self.tasks[i]['description']}")
             self.tasks.pop(i)
             self.save_tasks()
+
+    def archive_completed(self):
+        archived = self.load_archive()
+        remaining = []
+
+        for t in self.tasks:
+            if t["completed"]:
+                archived.append(t)
+            else:
+                remaining.append(t)
+
+        self.tasks = remaining
+        self.save_tasks()
+        self.save_archive(archived)
+        print("Completed tasks archived.")
+
+    def view_archive(self):
+        archived = self.load_archive()
+        if not archived:
+            print("Archive is empty.")
+            return
+        self.view_tasks(archived)
 
     def search(self, keyword):
         self.view_tasks([
@@ -195,13 +231,14 @@ def main():
         print("8. Sort")
         print("9. Statistics")
         print("10. Export to CSV")
-        print("11. Exit")
+        print("11. Archive completed")
+        print("12. View archive")
+        print("13. Exit")
 
         c = input("Choose: ")
 
         if c == "1":
             tm.view_tasks()
-
         elif c == "2":
             d = input("Description: ")
             p = input("Priority (Low/Medium/High): ").capitalize()
@@ -210,40 +247,33 @@ def main():
             r = input("Recurring (daily/weekly/monthly/none): ").lower()
             r = r if r in ("daily", "weekly", "monthly") else None
             tm.add_task(d, p, due, tags, r)
-
         elif c == "3":
             tm.view_tasks()
             tm.complete_task(int(input("Task #: ")) - 1)
-
         elif c == "4":
             tm.view_tasks()
             tm.delete_task(int(input("Task #: ")) - 1)
-
         elif c == "5":
             tm.search(input("Keyword: "))
-
         elif c == "6":
             tm.filter_tasks(input("completed / pending / overdue / low / medium / high: "))
-
         elif c == "7":
             tm.filter_by_tag(input("Tag: "))
-
         elif c == "8":
             tm.sort_tasks(input("date / priority: "))
-
         elif c == "9":
             tm.stats()
-
         elif c == "10":
             tm.export_to_csv()
-
         elif c == "11":
+            tm.archive_completed()
+        elif c == "12":
+            tm.view_archive()
+        elif c == "13":
             print("Goodbye!")
             break
-
         else:
             print("Invalid option.")
 
 if __name__ == "__main__":
     main()
-
