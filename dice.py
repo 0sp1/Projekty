@@ -71,6 +71,18 @@ class TaskManager:
         self.save_tasks()
         print("Task added.")
 
+    def edit_task(self, i, desc, priority, due, tags, recurring):
+        if 0 <= i < len(self.tasks):
+            self.tasks[i].update({
+                "description": desc,
+                "priority": priority,
+                "due_date": due,
+                "tags": tags,
+                "recurring": recurring
+            })
+            self.save_tasks()
+            print("Task updated.")
+
     def view_tasks(self, tasks=None):
         tasks = tasks if tasks is not None else self.tasks
         if not tasks:
@@ -97,10 +109,8 @@ class TaskManager:
             task = self.tasks[i]
             if task["recurring"]:
                 self.advance_recurring(task)
-                print("Recurring task advanced.")
             else:
                 task["completed"] = True
-                print("Task completed.")
             self.save_tasks()
 
     def advance_recurring(self, task):
@@ -115,138 +125,88 @@ class TaskManager:
 
     def delete_task(self, i):
         if 0 <= i < len(self.tasks):
-            print(f"Deleted: {self.tasks[i]['description']}")
             self.tasks.pop(i)
             self.save_tasks()
 
     def archive_completed(self):
         archived = self.load_archive()
-        remaining = []
-
-        for t in self.tasks:
-            if t["completed"]:
-                archived.append(t)
-            else:
-                remaining.append(t)
-
-        self.tasks = remaining
+        self.tasks, moved = [], self.tasks
+        for t in moved:
+            (archived if t["completed"] else self.tasks).append(t)
         self.save_tasks()
         self.save_archive(archived)
-        print("Completed tasks archived.")
 
     def view_archive(self):
-        archived = self.load_archive()
-        if not archived:
-            print("Archive is empty.")
-            return
-        self.view_tasks(archived)
+        self.view_tasks(self.load_archive())
 
     def search(self, keyword):
-        self.view_tasks([
-            t for t in self.tasks
-            if keyword.lower() in t["description"].lower()
-        ])
+        self.view_tasks([t for t in self.tasks if keyword.lower() in t["description"].lower()])
 
     def filter_tasks(self, mode):
         today = datetime.today().date()
-        out = []
-
-        for t in self.tasks:
-            due = datetime.strptime(t["due_date"], "%Y-%m-%d").date()
-            if mode == "completed" and t["completed"]:
-                out.append(t)
-            elif mode == "pending" and not t["completed"]:
-                out.append(t)
-            elif mode == "overdue" and not t["completed"] and due < today:
-                out.append(t)
-            elif mode in ("low", "medium", "high") and t["priority"].lower() == mode:
-                out.append(t)
-
-        self.view_tasks(out)
-
-    def filter_by_tag(self, tag):
         self.view_tasks([
             t for t in self.tasks
-            if tag.lower() in [x.lower() for x in t["tags"]]
+            if (mode == "completed" and t["completed"]) or
+               (mode == "pending" and not t["completed"]) or
+               (mode == "overdue" and not t["completed"] and
+                datetime.strptime(t["due_date"], "%Y-%m-%d").date() < today) or
+               (mode in ("low", "medium", "high") and t["priority"].lower() == mode)
         ])
 
+    def filter_by_tag(self, tag):
+        self.view_tasks([t for t in self.tasks if tag.lower() in map(str.lower, t["tags"])])
+
     def sort_tasks(self, mode):
-        if mode == "date":
-            tasks = sorted(self.tasks, key=lambda t: t["due_date"])
-        elif mode == "priority":
+        key = "due_date" if mode == "date" else None
+        if mode == "priority":
             order = {"Low": 1, "Medium": 2, "High": 3}
-            tasks = sorted(self.tasks, key=lambda t: order[t["priority"]], reverse=True)
-        else:
-            print("Invalid sort.")
-            return
-        self.view_tasks(tasks)
+            self.view_tasks(sorted(self.tasks, key=lambda t: order[t["priority"]], reverse=True))
+        elif key:
+            self.view_tasks(sorted(self.tasks, key=lambda t: t[key]))
 
     def stats(self):
         total = len(self.tasks)
         completed = sum(t["completed"] for t in self.tasks)
         overdue = sum(
-            1 for t in self.tasks
-            if not t["completed"] and
+            not t["completed"] and
             datetime.strptime(t["due_date"], "%Y-%m-%d").date() < datetime.today().date()
+            for t in self.tasks
         )
-
-        print("Statistics")
-        print(f"Total     : {total}")
-        print(f"Completed : {completed}")
-        print(f"Pending   : {total - completed}")
-        print(f"Overdue   : {overdue}")
-        if total:
-            print(f"Progress  : {(completed / total) * 100:.1f}%")
+        print(f"Total: {total}")
+        print(f"Completed: {completed}")
+        print(f"Pending: {total - completed}")
+        print(f"Overdue: {overdue}")
 
     def export_to_csv(self, filename="tasks.csv"):
         with open(filename, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            writer.writerow([
-                "Description", "Completed", "Priority",
-                "Due Date", "Tags", "Recurring"
-            ])
+            writer.writerow(["Description", "Completed", "Priority", "Due Date", "Tags", "Recurring"])
             for t in self.tasks:
                 writer.writerow([
-                    t["description"],
-                    t["completed"],
-                    t["priority"],
-                    t["due_date"],
-                    ", ".join(t["tags"]),
-                    t["recurring"] or ""
+                    t["description"], t["completed"], t["priority"],
+                    t["due_date"], ", ".join(t["tags"]), t["recurring"] or ""
                 ])
-        print(f"Tasks exported to {filename}")
 
 def main():
     tm = TaskManager()
 
     while True:
-        print("\nTask Manager")
-        print("1. View")
-        print("2. Add")
-        print("3. Complete")
-        print("4. Delete")
-        print("5. Search")
-        print("6. Filter")
-        print("7. Filter by tag")
-        print("8. Sort")
-        print("9. Statistics")
-        print("10. Export to CSV")
-        print("11. Archive completed")
-        print("12. View archive")
-        print("13. Exit")
+        print("\n1 View  2 Add  3 Complete  4 Delete  5 Edit")
+        print("6 Search  7 Filter  8 Tag Filter  9 Sort")
+        print("10 Stats  11 Export  12 Archive  13 View Archive  14 Exit")
 
         c = input("Choose: ")
 
         if c == "1":
             tm.view_tasks()
         elif c == "2":
-            d = input("Description: ")
-            p = input("Priority (Low/Medium/High): ").capitalize()
-            due = input("Due (YYYY-MM-DD): ")
-            tags = [t.strip() for t in input("Tags (comma): ").split(",") if t.strip()]
-            r = input("Recurring (daily/weekly/monthly/none): ").lower()
-            r = r if r in ("daily", "weekly", "monthly") else None
-            tm.add_task(d, p, due, tags, r)
+            tm.add_task(
+                input("Desc: "),
+                input("Priority: ").capitalize(),
+                input("Due: "),
+                [t.strip() for t in input("Tags: ").split(",") if t.strip()],
+                input("Recurring: ").lower() or None
+            )
         elif c == "3":
             tm.view_tasks()
             tm.complete_task(int(input("Task #: ")) - 1)
@@ -254,26 +214,34 @@ def main():
             tm.view_tasks()
             tm.delete_task(int(input("Task #: ")) - 1)
         elif c == "5":
-            tm.search(input("Keyword: "))
+            tm.view_tasks()
+            i = int(input("Task #: ")) - 1
+            tm.edit_task(
+                i,
+                input("Desc: "),
+                input("Priority: ").capitalize(),
+                input("Due: "),
+                [t.strip() for t in input("Tags: ").split(",") if t.strip()],
+                input("Recurring: ").lower() or None
+            )
         elif c == "6":
-            tm.filter_tasks(input("completed / pending / overdue / low / medium / high: "))
+            tm.search(input("Keyword: "))
         elif c == "7":
-            tm.filter_by_tag(input("Tag: "))
+            tm.filter_tasks(input("Mode: "))
         elif c == "8":
-            tm.sort_tasks(input("date / priority: "))
+            tm.filter_by_tag(input("Tag: "))
         elif c == "9":
-            tm.stats()
+            tm.sort_tasks(input("date / priority: "))
         elif c == "10":
-            tm.export_to_csv()
+            tm.stats()
         elif c == "11":
-            tm.archive_completed()
+            tm.export_to_csv()
         elif c == "12":
-            tm.view_archive()
+            tm.archive_completed()
         elif c == "13":
-            print("Goodbye!")
+            tm.view_archive()
+        elif c == "14":
             break
-        else:
-            print("Invalid option.")
 
 if __name__ == "__main__":
     main()
