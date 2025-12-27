@@ -43,21 +43,14 @@ class TaskManager:
 
     def show_reminders(self):
         today = datetime.today().date()
-        found = False
-
         for t in self.tasks:
             if t["completed"]:
                 continue
             due = datetime.strptime(t["due_date"], "%Y-%m-%d").date()
             if due < today:
                 print(f"OVERDUE: {t['description']} (due {t['due_date']})")
-                found = True
             elif due == today:
                 print(f"DUE TODAY: {t['description']}")
-                found = True
-
-        if not found:
-            print("No reminders.")
 
     def add_task(self, desc, priority, due, tags, recurring):
         self.tasks.append({
@@ -69,7 +62,6 @@ class TaskManager:
             "recurring": recurring
         })
         self.save_tasks()
-        print("Task added.")
 
     def edit_task(self, i, desc, priority, due, tags, recurring):
         if 0 <= i < len(self.tasks):
@@ -81,7 +73,6 @@ class TaskManager:
                 "recurring": recurring
             })
             self.save_tasks()
-            print("Task updated.")
 
     def view_tasks(self, tasks=None):
         tasks = tasks if tasks is not None else self.tasks
@@ -96,21 +87,21 @@ class TaskManager:
             overdue = "OVERDUE" if not t["completed"] and due < today else ""
             tags = ", ".join(t["tags"]) if t["tags"] else "None"
             recur = t["recurring"] if t["recurring"] else "No"
+            status = "Done" if t["completed"] else "Pending"
 
             print(
-                f"{i}. {t['description']} "
-                f"[{'Done' if t['completed'] else 'Pending'}] | "
+                f"{i}. {t['description']} [{status}] | "
                 f"Priority: {t['priority']} | Due: {t['due_date']} | "
                 f"Tags: {tags} | Recurring: {recur} {overdue}"
             )
 
     def complete_task(self, i):
         if 0 <= i < len(self.tasks):
-            task = self.tasks[i]
-            if task["recurring"]:
-                self.advance_recurring(task)
+            t = self.tasks[i]
+            if t["recurring"]:
+                self.advance_recurring(t)
             else:
-                task["completed"] = True
+                t["completed"] = True
             self.save_tasks()
 
     def advance_recurring(self, task):
@@ -130,9 +121,13 @@ class TaskManager:
 
     def archive_completed(self):
         archived = self.load_archive()
-        self.tasks, moved = [], self.tasks
-        for t in moved:
-            (archived if t["completed"] else self.tasks).append(t)
+        remaining = []
+        for t in self.tasks:
+            if t["completed"]:
+                archived.append(t)
+            else:
+                remaining.append(t)
+        self.tasks = remaining
         self.save_tasks()
         self.save_archive(archived)
 
@@ -157,12 +152,11 @@ class TaskManager:
         self.view_tasks([t for t in self.tasks if tag.lower() in map(str.lower, t["tags"])])
 
     def sort_tasks(self, mode):
-        key = "due_date" if mode == "date" else None
-        if mode == "priority":
+        if mode == "date":
+            self.view_tasks(sorted(self.tasks, key=lambda t: t["due_date"]))
+        elif mode == "priority":
             order = {"Low": 1, "Medium": 2, "High": 3}
             self.view_tasks(sorted(self.tasks, key=lambda t: order[t["priority"]], reverse=True))
-        elif key:
-            self.view_tasks(sorted(self.tasks, key=lambda t: t[key]))
 
     def stats(self):
         total = len(self.tasks)
@@ -179,13 +173,31 @@ class TaskManager:
 
     def export_to_csv(self, filename="tasks.csv"):
         with open(filename, "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow(["Description", "Completed", "Priority", "Due Date", "Tags", "Recurring"])
+            w = csv.writer(f)
+            w.writerow(["Description", "Completed", "Priority", "Due Date", "Tags", "Recurring"])
             for t in self.tasks:
-                writer.writerow([
+                w.writerow([
                     t["description"], t["completed"], t["priority"],
                     t["due_date"], ", ".join(t["tags"]), t["recurring"] or ""
                 ])
+
+    def import_from_csv(self, filename):
+        if not os.path.exists(filename):
+            print("File not found.")
+            return
+
+        with open(filename, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                self.tasks.append({
+                    "description": row["Description"],
+                    "completed": row["Completed"].lower() == "true",
+                    "priority": row["Priority"],
+                    "due_date": row["Due Date"],
+                    "tags": [t.strip() for t in row["Tags"].split(",") if t.strip()],
+                    "recurring": row["Recurring"] or None
+                })
+        self.save_tasks()
 
 def main():
     tm = TaskManager()
@@ -193,7 +205,8 @@ def main():
     while True:
         print("\n1 View  2 Add  3 Complete  4 Delete  5 Edit")
         print("6 Search  7 Filter  8 Tag Filter  9 Sort")
-        print("10 Stats  11 Export  12 Archive  13 View Archive  14 Exit")
+        print("10 Stats  11 Export  12 Import")
+        print("13 Archive  14 View Archive  15 Exit")
 
         c = input("Choose: ")
 
@@ -237,10 +250,12 @@ def main():
         elif c == "11":
             tm.export_to_csv()
         elif c == "12":
-            tm.archive_completed()
+            tm.import_from_csv(input("CSV file: "))
         elif c == "13":
-            tm.view_archive()
+            tm.archive_completed()
         elif c == "14":
+            tm.view_archive()
+        elif c == "15":
             break
 
 if __name__ == "__main__":
