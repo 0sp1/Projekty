@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>20/40/40 Layout</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #333;
+      color: #fff;
+      text-align: center;
+      padding: 1rem;
+      flex: 0 0 auto; /* fixed header height */
+    }
+
+    .container {
+      flex: 1; /* takes remaining space */
+      display: flex;
+      flex-direction: row; /* left/middle/right */
+    }
+
+    .section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.5rem;
+    }
+
+    .left {
+      background: #4CAF50;
+      flex: 0 0 20%;
+    }
+    .middle {
+      background: #2196F3;
+      flex: 0 0 40%;
+    }
+    .right {
+      background: #f44336;
+      flex: 0 0 40%;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1></h1>
+  </header>
+
+  <div class="container">
+    <div class="section left"></div>
+    <div class="section middle"></div>
+    <div class="section right"></div>
+  </div>
+</body>
+</html>
