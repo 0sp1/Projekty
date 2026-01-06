@@ -16,11 +16,12 @@ def add_words():
         while True:
             word = input("Add a word: ").strip()
             translation = input("Add its translation: ").strip()
-            writer.writerow({"word": word,"translation": translation})
+            writer.writerow({"word": word, "translation": translation})
+
             more = input("Add another word? (Y/n): ").strip().lower()
             if more != "y":
                 break
-                
+
 def read_words():
     if not os.path.isfile(FILENAME):
         print("No words saved yet.")
@@ -33,17 +34,40 @@ def read_words():
         for row in reader:
             print(f"{row['word']} → {row['translation']}")
 
+def search_words():
+    if not os.path.isfile(FILENAME):
+        print("No words saved yet.")
+        return
+
+    query = input("Search for: ").strip().lower()
+    found = False
+
+    with open(FILENAME, "r", newline="") as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            if query in row["word"].lower() or query in row["translation"].lower():
+                print(f"{row['word']} → {row['translation']}")
+                found = True
+
+    if not found:
+        print("No matching words found.")
+
 def main():
     while True:
         print("\n1. Add words")
         print("2. View words")
-        print("3. Exit")
+        print("3. Search words")
+        print("4. Exit")
+
         choice = input("Choose an option: ").strip()
+
         if choice == "1":
             add_words()
         elif choice == "2":
             read_words()
         elif choice == "3":
+            search_words()
+        elif choice == "4":
             print("Goodbye!")
             break
         else:
