@@ -1,5 +1,6 @@
 import csv
 import os
+import random
 
 FILENAME = "word.csv"
 
@@ -81,13 +82,37 @@ def delete_word():
 
     print("Word deleted successfully.")
 
+def quiz_words():
+    if not os.path.isfile(FILENAME):
+        print("No words saved yet.")
+        return
+
+    with open(FILENAME, "r", newline="") as csvfile:
+        words = list(csv.DictReader(csvfile))
+
+    if not words:
+        print("No words to quiz.")
+        return
+
+    print("\nQuiz mode (press Enter to quit)")
+    while True:
+        word = random.choice(words)
+        answer = input(f"What is the translation of '{word['word']}'? ").strip()
+        if answer == "":
+            break
+        if answer.lower() == word["translation"].lower():
+            print("Correct")
+        else:
+            print(f"Wrong. Correct answer: {word['translation']}")
+
 def main():
     while True:
         print("\n1. Add words")
         print("2. View words")
         print("3. Search words")
         print("4. Delete a word")
-        print("5. Exit")
+        print("5. Quiz mode")
+        print("6. Exit")
 
         choice = input("Choose an option: ").strip()
 
@@ -100,6 +125,8 @@ def main():
         elif choice == "4":
             delete_word()
         elif choice == "5":
+            quiz_words()
+        elif choice == "6":
             print("Goodbye!")
             break
         else:
