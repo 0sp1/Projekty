@@ -30,7 +30,6 @@ def read_words():
 
     with open(FILENAME, "r", newline="") as csvfile:
         reader = csv.DictReader(csvfile)
-
         print("\nSaved words:")
         for row in reader:
             print(f"{row['word']} → {row['translation']}")
@@ -82,6 +81,42 @@ def delete_word():
 
     print("Word deleted successfully.")
 
+def edit_word():
+    if not os.path.isfile(FILENAME):
+        print("No words saved yet.")
+        return
+
+    target = input("Enter the word to edit: ").strip().lower()
+    rows = []
+    updated = False
+
+    with open(FILENAME, "r", newline="") as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            if row["word"].lower() == target:
+                new_word = input(f"New word (leave empty to keep '{row['word']}'): ").strip()
+                new_translation = input(
+                    f"New translation (leave empty to keep '{row['translation']}'): "
+                ).strip()
+
+                row["word"] = new_word if new_word else row["word"]
+                row["translation"] = new_translation if new_translation else row["translation"]
+                updated = True
+
+            rows.append(row)
+
+    if not updated:
+        print("Word not found.")
+        return
+
+    with open(FILENAME, "w", newline="") as csvfile:
+        fieldnames = ["word", "translation"]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    print("Word updated successfully.")
+
 def quiz_words():
     if not os.path.isfile(FILENAME):
         print("No words saved yet.")
@@ -111,8 +146,9 @@ def main():
         print("2. View words")
         print("3. Search words")
         print("4. Delete a word")
-        print("5. Quiz mode")
-        print("6. Exit")
+        print("5. Edit a word")
+        print("6. Quiz mode")
+        print("7. Exit")
 
         choice = input("Choose an option: ").strip()
 
@@ -125,8 +161,10 @@ def main():
         elif choice == "4":
             delete_word()
         elif choice == "5":
-            quiz_words()
+            edit_word()
         elif choice == "6":
+            quiz_words()
+        elif choice == "7":
             print("Goodbye!")
             break
         else:
