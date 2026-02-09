@@ -140,6 +140,22 @@ def quiz_words():
         else:
             print(f"Wrong. Correct answer: {word['translation']}")
 
+def statistics():
+    if not os.path.isfile(FILENAME):
+        print("No words saved yet.")
+        return
+
+    with open(FILENAME, "r", newline="") as csvfile:
+        words = list(csv.DictReader(csvfile))
+
+    if not words:
+        print("No words saved yet.")
+        return
+
+    random_word = random.choice(words)
+    print(f"Total words: {len(words)}")
+    print(f"Random word: {random_word['word']} → {random_word['translation']}")
+
 def main():
     while True:
         print("\n1. Add words")
@@ -148,7 +164,8 @@ def main():
         print("4. Delete a word")
         print("5. Edit a word")
         print("6. Quiz mode")
-        print("7. Exit")
+        print("7. Statistics")
+        print("8. Exit")
 
         choice = input("Choose an option: ").strip()
 
@@ -165,6 +182,8 @@ def main():
         elif choice == "6":
             quiz_words()
         elif choice == "7":
+            statistics()
+        elif choice == "8":
             print("Goodbye!")
             break
         else:
