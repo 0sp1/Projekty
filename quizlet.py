@@ -4,127 +4,119 @@ import random
 
 FILENAME = "word.csv"
 
+def load_words():
+    if not os.path.isfile(FILENAME):
+        return []
+    with open(FILENAME, "r", newline="") as csvfile:
+        return list(csv.DictReader(csvfile))
+
+def save_words(words):
+    with open(FILENAME, "w", newline="") as csvfile:
+        fieldnames = ["word", "translation"]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(words)
+
 def add_words():
-    file_exists = os.path.isfile(FILENAME)
+    words = load_words()
+    existing = {row["word"].lower() for row in words}
 
     with open(FILENAME, "a", newline="") as csvfile:
         fieldnames = ["word", "translation"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-        if not file_exists:
+        if not os.path.isfile(FILENAME) or not words:
             writer.writeheader()
 
         while True:
             word = input("Add a word: ").strip()
-            translation = input("Add its translation: ").strip()
-            writer.writerow({"word": word, "translation": translation})
+            if word.lower() in existing:
+                print("Word already exists.")
+            else:
+                translation = input("Add its translation: ").strip()
+                writer.writerow({"word": word, "translation": translation})
+                existing.add(word.lower())
 
             more = input("Add another word? (Y/n): ").strip().lower()
             if more != "y":
                 break
 
 def read_words():
-    if not os.path.isfile(FILENAME):
+    words = load_words()
+    if not words:
         print("No words saved yet.")
         return
 
-    with open(FILENAME, "r", newline="") as csvfile:
-        reader = csv.DictReader(csvfile)
-        print("\nSaved words:")
-        for row in reader:
-            print(f"{row['word']} → {row['translation']}")
+    print("\nSaved words:")
+    for row in words:
+        print(f"{row['word']} → {row['translation']}")
 
 def search_words():
-    if not os.path.isfile(FILENAME):
+    words = load_words()
+    if not words:
         print("No words saved yet.")
         return
 
     query = input("Search for: ").strip().lower()
     found = False
 
-    with open(FILENAME, "r", newline="") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            if query in row["word"].lower() or query in row["translation"].lower():
-                print(f"{row['word']} → {row['translation']}")
-                found = True
+    for row in words:
+        if query in row["word"].lower() or query in row["translation"].lower():
+            print(f"{row['word']} → {row['translation']}")
+            found = True
 
     if not found:
         print("No matching words found.")
 
 def delete_word():
-    if not os.path.isfile(FILENAME):
+    words = load_words()
+    if not words:
         print("No words saved yet.")
         return
 
     target = input("Enter the word to delete: ").strip().lower()
-    rows = []
-    deleted = False
+    new_words = [row for row in words if row["word"].lower() != target]
 
-    with open(FILENAME, "r", newline="") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            if row["word"].lower() != target:
-                rows.append(row)
-            else:
-                deleted = True
-
-    if not deleted:
+    if len(new_words) == len(words):
         print("Word not found.")
         return
 
-    with open(FILENAME, "w", newline="") as csvfile:
-        fieldnames = ["word", "translation"]
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
-
+    save_words(new_words)
     print("Word deleted successfully.")
 
 def edit_word():
-    if not os.path.isfile(FILENAME):
+    words = load_words()
+    if not words:
         print("No words saved yet.")
         return
 
     target = input("Enter the word to edit: ").strip().lower()
-    rows = []
     updated = False
 
-    with open(FILENAME, "r", newline="") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            if row["word"].lower() == target:
-                new_word = input(f"New word (leave empty to keep '{row['word']}'): ").strip()
-                new_translation = input(
-                    f"New translation (leave empty to keep '{row['translation']}'): "
-                ).strip()
+    for row in words:
+        if row["word"].lower() == target:
+            new_word = input(f"New word (leave empty to keep '{row['word']}'): ").strip()
+            new_translation = input(
+                f"New translation (leave empty to keep '{row['translation']}'): "
+            ).strip()
 
-                row["word"] = new_word if new_word else row["word"]
-                row["translation"] = new_translation if new_translation else row["translation"]
-                updated = True
+            if new_word:
+                row["word"] = new_word
+            if new_translation:
+                row["translation"] = new_translation
 
-            rows.append(row)
+            updated = True
+            break
 
     if not updated:
         print("Word not found.")
         return
 
-    with open(FILENAME, "w", newline="") as csvfile:
-        fieldnames = ["word", "translation"]
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
-
+    save_words(words)
     print("Word updated successfully.")
 
 def quiz_words():
-    if not os.path.isfile(FILENAME):
-        print("No words saved yet.")
-        return
-
-    with open(FILENAME, "r", newline="") as csvfile:
-        words = list(csv.DictReader(csvfile))
-
+    words = load_words()
     if not words:
         print("No words to quiz.")
         return
@@ -141,13 +133,7 @@ def quiz_words():
             print(f"Wrong. Correct answer: {word['translation']}")
 
 def statistics():
-    if not os.path.isfile(FILENAME):
-        print("No words saved yet.")
-        return
-
-    with open(FILENAME, "r", newline="") as csvfile:
-        words = list(csv.DictReader(csvfile))
-
+    words = load_words()
     if not words:
         print("No words saved yet.")
         return
