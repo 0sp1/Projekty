@@ -1,27 +1,57 @@
 import csv
 import os
 import random
+import re
 
 FILENAME = "word.csv"
 
 def load_words():
     if not os.path.isfile(FILENAME):
         return []
-    with open(FILENAME, "r", newline="") as csvfile:
+    with open(FILENAME, "r", newline="", encoding="utf-8") as csvfile:
         return list(csv.DictReader(csvfile))
 
 def save_words(words):
-    with open(FILENAME, "w", newline="") as csvfile:
+    with open(FILENAME, "w", newline="", encoding="utf-8") as csvfile:
         fieldnames = ["word", "translation"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(words)
 
+def clean_text(text):
+    text = re.sub(r'#.*', '', text)
+    emoji_pattern = re.compile(
+        "["
+        "\U0001F600-\U0001F64F"
+        "\U0001F300-\U0001F5FF"
+        "\U0001F680-\U0001F6FF"
+        "\U0001F1E0-\U0001F1FF"
+        "\U00002700-\U000027BF"
+        "\U000024C2-\U0001F251"
+        "]+",
+        flags=re.UNICODE,
+    )
+    text = emoji_pattern.sub('', text)
+    return text.strip()
+
+def remove_comments_and_emojis():
+    words = load_words()
+    if not words:
+        print("No words saved yet.")
+        return
+
+    for row in words:
+        row["word"] = clean_text(row["word"])
+        row["translation"] = clean_text(row["translation"])
+
+    save_words(words)
+    print("Comments and emojis removed successfully.")
+
 def add_words():
     words = load_words()
     existing = {row["word"].lower() for row in words}
 
-    with open(FILENAME, "a", newline="") as csvfile:
+    with open(FILENAME, "a", newline="", encoding="utf-8") as csvfile:
         fieldnames = ["word", "translation"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -151,7 +181,8 @@ def main():
         print("5. Edit a word")
         print("6. Quiz mode")
         print("7. Statistics")
-        print("8. Exit")
+        print("8. Remove comments and emojis")
+        print("9. Exit")
 
         choice = input("Choose an option: ").strip()
 
@@ -170,6 +201,8 @@ def main():
         elif choice == "7":
             statistics()
         elif choice == "8":
+            remove_comments_and_emojis()
+        elif choice == "9":
             print("Goodbye!")
             break
         else:
